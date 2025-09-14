@@ -30,7 +30,7 @@
     .metric .k{font-size:20px;font-weight:700}
     .metric .l{font-size:12px;color:var(--sub)}
 
-    .toolbar{display:flex;gap:12px;flex-wrap:wrap;padding:14px;border-bottom:1px solid var(--line)}
+    .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;}
     .toolbar .field{display:flex;gap:8px;align-items:center}
 
     input[type="text"], input[type="url"], input[type="date"], input[type="month"], select, textarea{
@@ -48,10 +48,10 @@
     .btn.red{border-color:#7f1d1d;background:linear-gradient(180deg,#ef4444,#b91c1c)}
     .btn.ghost{background:transparent}
 
-    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
     .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
 
-    .tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);padding:10px 12px}
+    .tabs{display:flex;gap:8px;margin: 14px 0;border-bottom:1px solid var(--line);padding:10px 12px}
     .tab{padding:8px 12px;border-radius:999px;cursor:pointer;color:var(--sub)}
     .tab.active{background:#12141a;border:1px solid var(--line);color:var(--text)}
 
@@ -66,7 +66,7 @@
     .muted{color:var(--sub)}
     .mono{font-variant-numeric:tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
 
-    .footer{display:flex;justify-content:space-between;align-items:center;padding:12px}
+    .footer{display:flex;justify-content:space-between;align-items:center;padding:12px;border-top: 1px solid var(--line);font-size:12px;}
 
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px}
     .dialog{background:var(--surface);border:1px solid var(--line);border-radius:16px;max-width:560px;width:100%;box-shadow:var(--shadow)}
