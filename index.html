@@ -206,8 +206,8 @@
             </template>
           </div>
 
-          <div class="mono nowrap">{{ formatMs(totalForTaskOnDate(task, selectedDate)) }}</div>
-          <div class="mono nowrap">{{ formatMs(totalForTaskInMonth(task, selectedMonthDate)) }}</div>
+          <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, selectedDate)) }}</div>
+          <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, selectedMonthDate)) }}</div>
 
           <div class="row nowrap">
             <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
@@ -336,7 +336,8 @@ createApp({
     function totalForTaskOnDate(task, dateObj){
       const d0 = startOfDay(dateObj).getTime();
       const d1 = endOfDay(dateObj).getTime();
-      return taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), d0, d1) : 0);
+      const now = Date.now(); state.tick; // depend on tick for live updates
+      return taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, now, d0, d1) : 0);
     }
 
     function totalForTaskInMonth(task, monthDate){
@@ -487,7 +488,7 @@ createApp({
       addTask, openEdit, cancelEdit, saveEdit, archive, unarchive, remove,
       start, stop, totalForDate, totalForMonth, totalForTaskOnDate, totalForTaskInMonth,
       copyTSV, downloadCSV, exportRange,
-      formatMs, toISODate, monthLabel, selectedDate, selectedMonthDate,
+      formatMs, formatMsS, toISODate, monthLabel, selectedDate, selectedMonthDate,
       createSeed, clearAll,
       refs,
       isRunning,
@@ -514,6 +515,11 @@ function formatMs(ms){
   const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
   const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
   return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function formatMsS(ms){
+  const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
+  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+  return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 function toHHMM(ms){ const h = Math.floor(ms/3600000), m = Math.round((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 function overlapMs(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return Math.max(0, e-s); }
