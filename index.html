@@ -22,7 +22,7 @@
 
     .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .stack{display:grid;gap:12px}
+    .stack{display:grid;}
 
     .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding: 0 12px 12px;}
     .metric{padding:16px;border-radius:14px;background:var(--muted);border:1px solid var(--line)}
@@ -48,7 +48,7 @@
     .btn.red{border-color:#7f1d1d;background:linear-gradient(180deg,#ef4444,#b91c1c)}
     .btn.ghost{background:transparent}
 
-    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;}
     .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
     .chip.running{color:#22c55e;border-color:#22c55e}
 
@@ -58,16 +58,17 @@
 
     .hr{height:1px;background:var(--line);margin:14px 0}
 
-    .grid{display:grid;grid-template-columns:1.6fr .8fr .8fr .8fr .7fr .7fr;gap:10px;align-items:center}
-    .thead{padding:12px;color:var(--sub);font-size:12px}
+    .grid{display:grid;grid-template-columns:.8fr .8fr .8fr .7fr;gap:10px;align-items:center}
+    .thead{padding:12px 12px 0;color:var(--sub);font-size:12px}
     .tbody .row{padding:12px}
-    .task{border-top:1px solid var(--line)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;}
+    .task{padding-bottom:12px;border-bottom:1px solid var(--line)}
     .task:first-child{border-top:none}
     .task .title{font-weight:600}
     .muted{color:var(--sub)}
     .mono{font-variant-numeric:tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
 
-    .footer{display:flex;justify-content:space-between;align-items:center;padding:12px;border-top: 1px solid var(--line);font-size:12px;}
+    .footer{display:flex;justify-content:space-between;align-items:center;padding:12px;font-size:12px;}
 
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px}
     .dialog{background:var(--surface);border:1px solid var(--line);border-radius:16px;max-width:560px;width:100%;box-shadow:var(--shadow)}
@@ -163,54 +164,27 @@
 
   <!-- Tasks Table -->
   <div class="card stack">
-    <div class="thead grid">
-      <div>Задача</div>
-      <div class="hide-sm">Проєкт</div>
-      <div class="hide-sm">Тип</div>
-      <div class="nowrap">Сьогодні</div>
-      <div class="nowrap">Місяць</div>
-      <div class="nowrap">Дії</div>
-    </div>
     <div class="tbody">
       <div v-if="filteredTasks.length===0" class="empty">Немає задач у цій вкладці.</div>
       <div v-for="task in filteredTasks" :key="task.id" class="task">
-        <div class="row grid">
-          <div>
-            <div class="title">
-              <template v-if="!task._edit">
-                <a v-if="task.link" :href="task.link" target="_blank" rel="noopener noreferrer">{{ task.title }}</a>
-                <span v-else>{{ task.title }}</span>
-              </template>
-              <template v-else>
-                <input type="text" v-model="task._draft.title"/>
-              </template>
-            </div>
-            <div class="chips">
-              <span class="chip" v-if="!task._edit">ID: {{ task.id.slice(-6) }}</span>
-              <span class="chip running" v-if="isRunning(task)">● Запущено</span>
-              <template v-if="task._edit">
-                <input type="url" v-model="task._draft.link" placeholder="Посилання"/>
-              </template>
-            </div>
-          </div>
-
-          <div class="hide-sm">
-            <template v-if="!task._edit">{{ task.project || '—' }}</template>
+        <div class="head row">
+          <div class="title">
+            <template v-if="!task._edit">
+              <a v-if="task.link" :href="task.link" target="_blank" rel="noopener noreferrer">{{ task.title }}</a>
+              <span v-else>{{ task.title }}</span>
+            </template>
             <template v-else>
-              <input type="text" v-model="task._draft.project" list="projectsList"/>
+              <input type="text" v-model="task._draft.title"/>
             </template>
           </div>
-          <div class="hide-sm">
-            <template v-if="!task._edit">{{ task.type || '—' }}</template>
-            <template v-else>
-              <input type="text" v-model="task._draft.type" list="typesList"/>
+          <div class="chips">
+            <span class="chip" v-if="!task._edit">ID: {{ task.id.slice(-6) }}</span>
+            <span class="chip running" v-if="isRunning(task)">● Запущено</span>
+            <template v-if="task._edit">
+              <input type="url" v-model="task._draft.link" placeholder="Посилання"/>
             </template>
           </div>
-
-          <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, selectedDate)) }}</div>
-          <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task)) }}</div>
-
-          <div class="row nowrap">
+          <div class="controls">
             <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
             <button class="btn" v-else-if="isRunning(task)" @click="stop(task)" title="Зупинити таймер">⏸</button>
             <button class="btn" v-if="!task._edit" @click="openEdit(task)">Редагувати</button>
@@ -220,6 +194,30 @@
             <button class="btn" v-if="task.archived && !task._edit" @click="unarchive(task)">Повернути</button>
             <button class="btn red" v-if="!task._edit" @click="remove(task)">Видалити</button>
           </div>
+        </div>
+        <div class="thead grid">
+          <div>Задача</div>
+          <div class="hide-sm">Тип</div>
+          <div class="nowrap">Сьогодні</div>
+          <div class="nowrap">Місяць</div>
+        </div>
+        <div class="row grid">
+          <div class="hide-sm">
+            <template v-if="!task._edit">{{ task.project || '—' }}</template>
+            <template v-else>
+              <input type="text" v-model="task._draft.project" list="projectsList"/>
+            </template>
+          </div>
+
+          <div class="hide-sm">
+            <template v-if="!task._edit">{{ task.type || '—' }}</template>
+            <template v-else>
+              <input type="text" v-model="task._draft.type" list="typesList"/>
+            </template>
+          </div>
+
+          <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, selectedDate)) }}</div>
+          <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task)) }}</div>
         </div>
       </div>
     </div>
