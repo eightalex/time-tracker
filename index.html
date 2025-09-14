@@ -51,6 +51,7 @@
 
     .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
     .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
+    .chip.running{color:#22c55e;border-color:#22c55e}
 
     .tabs{display:flex;gap:8px;margin: 14px 0;border-bottom:1px solid var(--line);padding:10px 12px}
     .tab{padding:8px 12px;border-radius:999px;cursor:pointer;color:var(--sub)}
@@ -187,7 +188,7 @@
             </div>
             <div class="chips">
               <span class="chip" v-if="!task._edit">ID: {{ task.id.slice(-6) }}</span>
-              <span class="chip" v-if="isRunning(task)">● Запущено</span>
+              <span class="chip running" v-if="isRunning(task)">● Запущено</span>
               <template v-if="task._edit">
                 <input type="url" v-model="task._draft.link" placeholder="Посилання"/>
               </template>
