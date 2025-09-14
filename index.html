@@ -235,7 +235,7 @@
 </div>
 
 <script type="module">
-import { createApp, reactive, computed, watch, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+import { createApp, reactive, computed, watch, onMounted, toRefs } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
 
 createApp({
   setup(){
@@ -483,7 +483,7 @@ createApp({
     const refs = {};
 
     return {
-      ...state,
+      ...toRefs(state),
       today,
       knownProjects, knownTypes, filteredTasks, runningCount, todayMs, monthMs,
       addTask, openEdit, cancelEdit, saveEdit, archive, unarchive, remove,
