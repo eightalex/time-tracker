@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Трекер часу — Vue 3</title>
+  <style>
+    :root{
+      --bg:#0b0c0e; --surface:#111216; --muted:#1a1c20; --line:#23262d; --text:#e9edf1; --sub:#9aa3ad; --accent:#6ee7b7; --accent-2:#60a5fa; --danger:#ef4444; --warn:#f59e0b;
+      --radius:16px; --pad:14px; --shadow:0 8px 30px rgba(0,0,0,.35);
+      --font:-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0a0b0d, #0d0f13);color:var(--text);font-family:var(--font);}
+    a{color:inherit}
+
+    .container{max-width:1100px;margin:0 auto;padding:28px;}
+    .header{display:flex;gap:18px;align-items:center;justify-content:space-between;margin-bottom:24px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:36px;height:36px;border-radius:12px;background:conic-gradient(from 180deg, var(--accent), var(--accent-2));filter:saturate(110%);}
+    h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.2px}
+
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .stack{display:grid;gap:12px}
+
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding: 0 12px 12px;}
+    .metric{padding:16px;border-radius:14px;background:var(--muted);border:1px solid var(--line)}
+    .metric .k{font-size:20px;font-weight:700}
+    .metric .l{font-size:12px;color:var(--sub)}
+
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;padding:14px;border-bottom:1px solid var(--line)}
+    .toolbar .field{display:flex;gap:8px;align-items:center}
+
+    input[type="text"], input[type="url"], input[type="date"], input[type="month"], select, textarea{
+      background:#0f1115;border:1px solid var(--line);border-radius:12px;color:var(--text);
+      padding:12px 12px;font-size:14px;outline:none;min-width:0;transition:border .2s ease, background .2s ease
+    }
+    input:focus, select:focus, textarea:focus{border-color:#2a81ff;background:#0f1218}
+
+    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:linear-gradient(180deg,#181a20,#14161b);
+      color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;user-select:none;font-weight:600}
+    .btn:hover{filter:brightness(1.05)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{border-color:#1f6feb;background:linear-gradient(180deg,#1a4fff,#173fd5)}
+    .btn.green{border-color:#14532d;background:linear-gradient(180deg,#16a34a,#15803d)}
+    .btn.red{border-color:#7f1d1d;background:linear-gradient(180deg,#ef4444,#b91c1c)}
+    .btn.ghost{background:transparent}
+
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
+
+    .tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);padding:10px 12px}
+    .tab{padding:8px 12px;border-radius:999px;cursor:pointer;color:var(--sub)}
+    .tab.active{background:#12141a;border:1px solid var(--line);color:var(--text)}
+
+    .hr{height:1px;background:var(--line);margin:14px 0}
+
+    .grid{display:grid;grid-template-columns:1.6fr .8fr .8fr .8fr .7fr .7fr;gap:10px;align-items:center}
+    .thead{padding:12px;color:var(--sub);font-size:12px}
+    .tbody .row{padding:12px}
+    .task{border-top:1px solid var(--line)}
+    .task:first-child{border-top:none}
+    .task .title{font-weight:600}
+    .muted{color:var(--sub)}
+    .mono{font-variant-numeric:tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+
+    .footer{display:flex;justify-content:space-between;align-items:center;padding:12px}
+
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px}
+    .dialog{background:var(--surface);border:1px solid var(--line);border-radius:16px;max-width:560px;width:100%;box-shadow:var(--shadow)}
+
+    .empty{padding:24px;color:var(--sub);text-align:center}
+    .nowrap{white-space:nowrap}
+    .grow{flex:1}
+
+    @media (max-width:900px){
+      .metrics{grid-template-columns:1fr}
+      .grid{grid-template-columns:1.6fr .8fr .8fr .8fr;}
+      .hide-sm{display:none}
+    }
+  </style>
+</head>
+<body>
+<div id="app" class="container" v-cloak>
+  <div class="header">
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>Трекер часу</h1>
+    </div>
+    <div class="row">
+      <button class="btn ghost" @click="createSeed">+ Швидко додати демо</button>
+      <button class="btn ghost" @click="clearAll" title="Очистити локальні дані">Очистити</button>
+    </div>
+  </div>
+
+  <!-- Metrics & Filters -->
+  <div class="card stack">
+    <div class="toolbar">
+      <div class="field">
+        <label class="muted">День:</label>
+        <input type="date" v-model="selectedDateStr"/>
+        <div class="chip mono">{{ formatMs(totalForDate(selectedDate)) }}</div>
+      </div>
+      <div class="field">
+        <label class="muted">Місяць:</label>
+        <input type="month" v-model="selectedMonthStr"/>
+        <div class="chip mono">{{ formatMs(totalForMonth(selectedMonthDate)) }}</div>
+      </div>
+      <div class="field">
+        <label class="muted">Експорт (період):</label>
+        <input type="date" v-model="exportStartStr"/>
+        <span class="muted">–</span>
+        <input type="date" v-model="exportEndStr"/>
+        <button class="btn" @click="copyTSV">Копіювати TSV</button>
+        <button class="btn" @click="downloadCSV">Завантажити CSV</button>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="k mono">{{ formatMs(todayMs) }}</div>
+        <div class="l">Сьогодні ({{ toISODate(today) }})</div>
+      </div>
+      <div class="metric">
+        <div class="k mono">{{ formatMs(monthMs) }}</div>
+        <div class="l">За {{ monthLabel(selectedMonthDate) }}</div>
+      </div>
+      <div class="metric">
+        <div class="k mono">{{ runningCount }} запущено</div>
+        <div class="l">Активні таймери</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <!-- New Task Form -->
+  <div class="card">
+    <div class="toolbar">
+      <strong>Нова задача</strong>
+      <input class="grow" type="text" v-model="form.title" placeholder="Назва задачі" @keyup.enter="addTask"/>
+      <input type="url" v-model="form.link" placeholder="Посилання на Planka (необов'язково)"/>
+      <input type="text" v-model="form.project" list="projectsList" placeholder="Проєкт"/>
+      <datalist id="projectsList">
+        <option v-for="p in knownProjects" :key="p" :value="p"></option>
+      </datalist>
+      <input type="text" v-model="form.type" list="typesList" placeholder="Тип проєкту"/>
+      <datalist id="typesList">
+        <option v-for="t in knownTypes" :key="t" :value="t"></option>
+      </datalist>
+      <button class="btn primary" @click="addTask">Додати</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs card">
+    <div class="tab" :class="{active: tab==='all'}" @click="tab='all'">Всі задачі</div>
+    <div class="tab" :class="{active: tab==='archived'}" @click="tab='archived'">Архів</div>
+  </div>
+
+  <!-- Tasks Table -->
+  <div class="card stack">
+    <div class="thead grid">
+      <div>Задача</div>
+      <div class="hide-sm">Проєкт</div>
+      <div class="hide-sm">Тип</div>
+      <div class="nowrap">Сьогодні</div>
+      <div class="nowrap">Місяць</div>
+      <div class="nowrap">Дії</div>
+    </div>
+    <div class="tbody">
+      <div v-if="filteredTasks.length===0" class="empty">Немає задач у цій вкладці.</div>
+      <div v-for="task in filteredTasks" :key="task.id" class="task">
+        <div class="row grid">
+          <div>
+            <div class="title">
+              <template v-if="!task._edit">
+                <a v-if="task.link" :href="task.link" target="_blank" rel="noopener noreferrer">{{ task.title }}</a>
+                <span v-else>{{ task.title }}</span>
+              </template>
+              <template v-else>
+                <input type="text" v-model="task._draft.title"/>
+              </template>
+            </div>
+            <div class="chips">
+              <span class="chip" v-if="!task._edit">ID: {{ task.id.slice(-6) }}</span>
+              <span class="chip" v-if="isRunning(task)">● Запущено</span>
+              <template v-if="task._edit">
+                <input type="url" v-model="task._draft.link" placeholder="Посилання"/>
+              </template>
+            </div>
+          </div>
+
+          <div class="hide-sm">
+            <template v-if="!task._edit">{{ task.project || '—' }}</template>
+            <template v-else>
+              <input type="text" v-model="task._draft.project" list="projectsList"/>
+            </template>
+          </div>
+          <div class="hide-sm">
+            <template v-if="!task._edit">{{ task.type || '—' }}</template>
+            <template v-else>
+              <input type="text" v-model="task._draft.type" list="typesList"/>
+            </template>
+          </div>
+
+          <div class="mono nowrap">{{ formatMs(totalForTaskOnDate(task, selectedDate)) }}</div>
+          <div class="mono nowrap">{{ formatMs(totalForTaskInMonth(task, selectedMonthDate)) }}</div>
+
+          <div class="row nowrap">
+            <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
+            <button class="btn" v-else-if="isRunning(task)" @click="stop(task)" title="Зупинити таймер">⏸</button>
+            <button class="btn" v-if="!task._edit" @click="openEdit(task)">Редагувати</button>
+            <button class="btn" v-else @click="saveEdit(task)">Зберегти</button>
+            <button class="btn ghost" v-if="task._edit" @click="cancelEdit(task)">Скасувати</button>
+            <button class="btn" v-if="!task.archived && !task._edit" @click="archive(task)">Архівувати</button>
+            <button class="btn" v-if="task.archived && !task._edit" @click="unarchive(task)">Повернути</button>
+            <button class="btn red" v-if="!task._edit" @click="remove(task)">Видалити</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="muted">Всього задач: {{ filteredTasks.length }}</div>
+      <div class="muted">Збереження: LocalStorage</div>
+    </div>
+  </div>
+
+  <!-- Hidden textarea for copy -->
+  <textarea ref="hiddenTA" style="position:absolute;left:-9999px;top:-9999px;height:1px;width:1px"></textarea>
+</div>
+
+<script type="module">
+import { createApp, reactive, computed, watch, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+
+createApp({
+  setup(){
+    const STORAGE_KEY = 'time-tracker.v1';
+    const state = reactive({
+      tasks: [],
+      tab: 'all',
+      form: { title:'', link:'', project:'', type:'' },
+      // selectors
+      selectedDateStr: toInputDate(new Date()),
+      selectedMonthStr: toInputMonth(prevMonth(new Date())), // за замовчуванням — минулий місяць
+      exportStartStr: toInputDate(firstDayOfMonth(prevMonth(new Date()))),
+      exportEndStr: toInputDate(lastDayOfMonth(prevMonth(new Date()))),
+      tick: 0,
+    });
+
+    // Derived dates
+    const selectedDate = computed(()=> new Date(state.selectedDateStr + 'T00:00:00'));
+    const selectedMonthDate = computed(()=> new Date(state.selectedMonthStr + '-01T00:00:00'));
+
+    const today = new Date();
+
+    // Known projects/types for datalist
+    const knownProjects = computed(()=> uniq(state.tasks.map(t=>t.project).filter(Boolean)).sort());
+    const knownTypes = computed(()=> uniq(state.tasks.map(t=>t.type).filter(Boolean)).sort());
+
+    const filteredTasks = computed(()=> state.tasks.filter(t=> state.tab==='archived' ? t.archived : !t.archived));
+
+    const runningCount = computed(()=> state.tasks.filter(isRunning).length);
+
+    const todayMs = computed(()=> totalForDate(today));
+    const monthMs = computed(()=> totalForMonth(selectedMonthDate.value));
+
+    // Add task
+    function addTask(){
+      const f = state.form;
+      const title = (f.title||'').trim();
+      if(!title) return alert('Вкажіть назву задачі');
+      const task = {
+        id: cryptoRandomId(), title, link: (f.link||'').trim(), project: (f.project||'').trim(), type: (f.type||'').trim(),
+        archived: false, logs: [], running: null, createdAt: Date.now()
+      };
+      state.tasks.unshift(task);
+      state.form = { title:'', link:'', project:'', type:'' };
+      save();
+    }
+
+    // Edit task
+    function openEdit(task){ task._edit=true; task._draft = { title:task.title, link:task.link, project:task.project, type:task.type }; }
+    function cancelEdit(task){ task._edit=false; task._draft=null; }
+    function saveEdit(task){
+      Object.assign(task, task._draft);
+      task._edit=false; task._draft=null; save();
+    }
+
+    // Archive / Delete
+    function archive(task){ task.archived=true; stopIfRunning(task); save(); }
+    function unarchive(task){ task.archived=false; save(); }
+    function remove(task){
+      if(!confirm('Видалити задачу? Дію неможливо скасувати.')) return;
+      stopIfRunning(task);
+      state.tasks = state.tasks.filter(t=>t.id!==task.id);
+      save();
+    }
+
+    // Timer controls
+    function start(task){
+      // зупинимо інші таймери для дисципліни
+      state.tasks.forEach(t=>{ if(isRunning(t)) stop(t); });
+      task.running = { start: Date.now() };
+    }
+    function stop(task){
+      if(!isRunning(task)) return;
+      const start = new Date(task.running.start);
+      const end = new Date();
+      const dur = Math.max(0, end - start);
+      task.logs.push({ id: cryptoRandomId(), start: start.getTime(), end: end.getTime(), ms: dur });
+      task.running = null; save();
+    }
+    function stopIfRunning(task){ if(isRunning(task)) stop(task); }
+
+    // Totals
+    function totalForDate(dateObj){
+      const d0 = startOfDay(dateObj).getTime();
+      const d1 = endOfDay(dateObj).getTime();
+      let sum = 0;
+      for(const t of state.tasks){ sum += taskTotalInRange(t, d0, d1); }
+      return sum + runningOverlapInRange(d0, d1);
+    }
+
+    function totalForMonth(monthDate){
+      const m0 = firstDayOfMonth(monthDate).getTime();
+      const m1 = lastDayOfMonth(monthDate).getTime();
+      let sum = 0;
+      for(const t of state.tasks){ sum += taskTotalInRange(t, m0, m1); }
+      return sum + runningOverlapInRange(m0, m1);
+    }
+
+    function totalForTaskOnDate(task, dateObj){
+      const d0 = startOfDay(dateObj).getTime();
+      const d1 = endOfDay(dateObj).getTime();
+      return taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), d0, d1) : 0);
+    }
+
+    function totalForTaskInMonth(task, monthDate){
+      const m0 = firstDayOfMonth(monthDate).getTime();
+      const m1 = lastDayOfMonth(monthDate).getTime();
+      return taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), m0, m1) : 0);
+    }
+
+    function taskTotalInRange(task, r0, r1){
+      let sum = 0;
+      for(const log of task.logs){ sum += overlapMs(log.start, log.end, r0, r1); }
+      return sum;
+    }
+    function runningOverlapInRange(r0, r1){
+      let sum = 0;
+      for(const t of state.tasks){ if(isRunning(t)) sum += overlapMs(t.running.start, Date.now(), r0, r1); }
+      return sum;
+    }
+
+    // Export
+    function buildRowsForRange(startTs, endTs){
+      // агрегуємо по (дата, задача)
+      const map = new Map();
+      const clamp0 = startOfDay(new Date(startTs)).getTime();
+      const clamp1 = endOfDay(new Date(endTs)).getTime();
+
+      for(const t of state.tasks){
+        // історичні логи
+        for(const log of t.logs){
+          const ov = overlapMs(log.start, log.end, clamp0, clamp1);
+          if(ov>0){
+            const dayKey = toISODate(new Date(midpointWithin(log.start, log.end, clamp0, clamp1)));
+            const key = `${dayKey}__${t.id}`;
+            const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0};
+            cur.ms += ov; map.set(key, cur);
+          }
+        }
+        // активний лог (якщо в межах)
+        if(isRunning(t)){
+          const ov = overlapMs(t.running.start, Date.now(), clamp0, clamp1);
+          if(ov>0){
+            const dayKey = toISODate(new Date(midpointWithin(t.running.start, Date.now(), clamp0, clamp1)));
+            const key = `${dayKey}__${t.id}`;
+            const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0};
+            cur.ms += ov; map.set(key, cur);
+          }
+        }
+      }
+      // Відсортуємо: дата зрост., title
+      const rows = Array.from(map.values()).sort((a,b)=> (a.date<b.date?-1:a.date>b.date?1: (a.title.localeCompare(b.title))));
+      return rows;
+    }
+
+    function copyTSV(){
+      const {start, end} = exportRange();
+      const rows = buildRowsForRange(start, end);
+      const header = ['Date','Task','Project','Type','Minutes','HH:MM','Link'];
+      const lines = [header.join('\t')];
+      for(const r of rows){
+        const mins = Math.round(r.ms/60000);
+        const hhmm = toHHMM(r.ms);
+        lines.push([r.date, r.title, r.project, r.type, mins, hhmm, r.link].join('\t'));
+      }
+      const tsv = lines.join('\n');
+      // copy
+      const ta = refs.hiddenTA;
+      ta.value = tsv; ta.select(); document.execCommand('copy');
+      alert('Скопійовано у буфер — вставляйте в Google Sheets.');
+    }
+
+    function downloadCSV(){
+      const {start, end} = exportRange();
+      const rows = buildRowsForRange(start, end);
+      const header = ['Date','Task','Project','Type','Minutes','HH:MM','Link'];
+      const lines = [header.join(',')];
+      for(const r of rows){
+        const vals = [r.date, r.title, r.project, r.type, Math.round(r.ms/60000), toHHMM(r.ms), r.link]
+          .map(csvSafe);
+        lines.push(vals.join(','));
+      }
+      const csv = lines.join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `time-export-${state.exportStartStr}_to_${state.exportEndStr}.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    function exportRange(){
+      const start = new Date(state.exportStartStr + 'T00:00:00').getTime();
+      const end = new Date(state.exportEndStr + 'T23:59:59').getTime();
+      if(end < start){ alert('Кінець періоду раніше початку'); }
+      return {start, end};
+    }
+
+    // Save / Load
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({tasks: state.tasks})); }
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        if(Array.isArray(data.tasks)) state.tasks = data.tasks;
+      }catch(e){ console.warn('Load failed', e); }
+    }
+
+    // Demo data quick add
+    function createSeed(){
+      if(!confirm('Додати кілька демо-задач?')) return;
+      const now = Date.now();
+      const p = (title, project, type, minsAgoStart, minsDur) => ({
+        id: cryptoRandomId(), title, link:'', project, type, archived:false, logs:[], running:null, createdAt: now
+      });
+      const a = p('TB: виправити помилку ACF','Traffic Bureau','dev',0,0);
+      const b = p('Planka: валідація форм','Internal','dev',0,0);
+      const c = p('Рефакторинг таблиць','Mezha','frontend',0,0);
+      // згенеруємо пару логів за минулий місяць
+      const lastM = prevMonth(new Date());
+      const lastMStart = firstDayOfMonth(lastM).getTime();
+      const day1 = lastMStart + 3*86400000 + 9*3600000; // 4 число о 09:00
+      const day2 = lastMStart + 10*86400000 + 14*3600000; // 11 число о 14:00
+      a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000});
+      b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000});
+      // сьогоднішній лог
+      const todayStart = startOfDay(new Date()).getTime()+10*3600000; // 10:00
+      c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000});
+      state.tasks.unshift(a,b,c); save();
+    }
+
+    function clearAll(){ if(confirm('Очистити всі локальні дані?')) { localStorage.removeItem(STORAGE_KEY); state.tasks=[]; } }
+
+    // Tick to re-render running timers
+    setInterval(()=> state.tick++, 1000);
+
+    // Persistence watchers
+    watch(()=>state.tasks, save, {deep:true});
+
+    // lifecycle
+    onMounted(()=>{ load(); });
+
+    // Refs (for copy textarea)
+    const refs = {};
+
+    return {
+      ...state,
+      today,
+      knownProjects, knownTypes, filteredTasks, runningCount, todayMs, monthMs,
+      addTask, openEdit, cancelEdit, saveEdit, archive, unarchive, remove,
+      start, stop, totalForDate, totalForMonth, totalForTaskOnDate, totalForTaskInMonth,
+      copyTSV, downloadCSV, exportRange,
+      formatMs, toISODate, monthLabel, selectedDate, selectedMonthDate,
+      createSeed, clearAll,
+      refs,
+      isRunning,
+    };
+  }
+}).mount('#app');
+
+// ---------- Helpers ----------
+function uniq(arr){ return Array.from(new Set(arr)); }
+function cryptoRandomId(){
+  if(window.crypto?.randomUUID) return crypto.randomUUID();
+  return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
+function firstDayOfMonth(d){ const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
+function lastDayOfMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()+1,0); x.setHours(23,59,59,999); return x; }
+function prevMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()-1, 1); return x; }
+function toInputDate(d){ return d.toISOString().slice(0,10); }
+function toInputMonth(d){ return d.toISOString().slice(0,7); }
+function toISODate(d){ return d.toISOString().slice(0,10); }
+function monthLabel(d){ return d.toLocaleDateString('uk-UA', { month:'long', year:'numeric' }); }
+function formatMs(ms){
+  const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
+  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
+  return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function toHHMM(ms){ const h = Math.floor(ms/3600000), m = Math.round((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+function overlapMs(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return Math.max(0, e-s); }
+function midpointWithin(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return s + Math.floor((e-s)/2); }
+function csvSafe(v){
+  const s = (v==null?'':String(v));
+  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+function isRunning(task){ return !!task.running; }
+</script>
+</body>
+</html>
