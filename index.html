@@ -233,7 +233,7 @@
 </div>
 
 <script type="module">
-import { createApp, reactive, computed, watch, onMounted, toRefs } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+import { createApp, reactive, computed, watch, onMounted, toRefs, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
 
 createApp({
   setup(){
@@ -249,6 +249,8 @@ createApp({
       exportEndStr: toInputDate(lastDayOfMonth(prevMonth(new Date()))),
       tick: 0,
     });
+    // Template refs
+    const hiddenTA = ref(null);
 
     // Derived dates
     const selectedDate = computed(()=> new Date(state.selectedDateStr + 'T00:00:00'));
@@ -402,21 +404,47 @@ createApp({
       return rows;
     }
 
+    // Сумарний час по кожній задачі за період
+    function buildTaskTotalsForRange(startTs, endTs){
+      const clamp0 = startOfDay(new Date(startTs)).getTime();
+      const clamp1 = endOfDay(new Date(endTs)).getTime();
+      const rows = [];
+      for(const t of state.tasks){
+        let ms = taskTotalInRange(t, clamp0, clamp1);
+        if(isRunning(t)){
+          ms += overlapMs(t.running.start, Date.now(), clamp0, clamp1);
+        }
+        if(ms>0){
+          rows.push({ title: t.title||'', link: t.link||'', project: t.project||'', type: t.type||'', ms });
+        }
+      }
+      return rows.sort((a,b)=> a.title.localeCompare(b.title));
+    }
+
     function copyTSV(){
       const {start, end} = exportRange();
-      const rows = buildRowsForRange(start, end);
-      const header = ['Date','Task','Project','Type','Minutes','HH:MM','Link'];
-      const lines = [header.join('\t')];
+      const rows = buildTaskTotalsForRange(start, end);
+      const lines = [];
       for(const r of rows){
-        const mins = Math.round(r.ms/60000);
-        const hhmm = toHHMM(r.ms);
-        lines.push([r.date, r.title, r.project, r.type, mins, hhmm, r.link].join('\t'));
+        // Use floor to two decimals so 1:31 -> 1.51 (not 1.52)
+        const hours = Math.floor((r.ms/3600000)*100)/100;
+        lines.push([r.title, r.link, r.project, r.type, hours].join('\t'));
       }
       const tsv = lines.join('\n');
       // copy
-      const ta = refs.hiddenTA;
-      ta.value = tsv; ta.select(); document.execCommand('copy');
-      alert('Скопійовано у буфер — вставляйте в Google Sheets.');
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(tsv).then(()=>{
+          alert('Скопійовано у буфер — вставляйте в Google Sheets.');
+        }).catch(()=>{
+          const ta = hiddenTA.value; if(!ta) return alert('Не знайдено буфер для копіювання');
+          ta.value = tsv; ta.select(); document.execCommand('copy');
+          alert('Скопійовано у буфер — вставляйте в Google Sheets.');
+        });
+      } else {
+        const ta = hiddenTA.value; if(!ta) return alert('Не знайдено буфер для копіювання');
+        ta.value = tsv; ta.select(); document.execCommand('copy');
+        alert('Скопійовано у буфер — вставляйте в Google Sheets.');
+      }
     }
 
     function downloadCSV(){
@@ -489,9 +517,6 @@ createApp({
     // lifecycle
     onMounted(()=>{ load(); });
 
-    // Refs (for copy textarea)
-    const refs = {};
-
     return {
       ...toRefs(state),
       today,
@@ -502,7 +527,7 @@ createApp({
       copyTSV, downloadCSV, exportRange,
       formatMs, formatMsS, toISODate, monthLabel, selectedDate, selectedMonthDate,
       createSeed, clearAll,
-      refs,
+      hiddenTA,
       isRunning,
     };
   }
