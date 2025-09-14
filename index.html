@@ -209,7 +209,7 @@
           </div>
 
           <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, selectedDate)) }}</div>
-          <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, selectedMonthDate)) }}</div>
+          <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task)) }}</div>
 
           <div class="row nowrap">
             <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
@@ -346,6 +346,18 @@ createApp({
       const m0 = firstDayOfMonth(monthDate).getTime();
       const m1 = lastDayOfMonth(monthDate).getTime();
       return taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), m0, m1) : 0);
+    }
+
+    function totalForTaskOverall(task){
+      let sum = 0;
+      for(const log of task.logs){
+        sum += (typeof log.ms === 'number') ? log.ms : Math.max(0, (log.end||0) - (log.start||0));
+      }
+      if(isRunning(task)){
+        state.tick; // depend on tick for live updates
+        sum += Date.now() - task.running.start;
+      }
+      return sum;
     }
 
     function taskTotalInRange(task, r0, r1){
@@ -489,6 +501,7 @@ createApp({
       knownProjects, knownTypes, filteredTasks, runningCount, todayMs, monthMs,
       addTask, openEdit, cancelEdit, saveEdit, archive, unarchive, remove,
       start, stop, totalForDate, totalForMonth, totalForTaskOnDate, totalForTaskInMonth,
+      totalForTaskOverall,
       copyTSV, downloadCSV, exportRange,
       formatMs, formatMsS, toISODate, monthLabel, selectedDate, selectedMonthDate,
       createSeed, clearAll,
