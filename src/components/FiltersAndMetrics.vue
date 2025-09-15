@@ -2,16 +2,6 @@
   <div class="card stack">
     <div class="toolbar">
       <div class="field">
-        <label class="muted">День:</label>
-        <input type="date" v-model="modelSelectedDateStr"/>
-        <div class="chip mono">{{ formatMs(totalForDate(tasks, selectedDate)) }}</div>
-      </div>
-      <div class="field">
-        <label class="muted">Місяць:</label>
-        <input type="month" v-model="modelSelectedMonthStr"/>
-        <div class="chip mono">{{ formatMs(totalForMonth(tasks, selectedMonthDate)) }}</div>
-      </div>
-      <div class="field">
         <label class="muted">Експорт (період):</label>
         <input type="date" v-model="modelExportStartStr"/>
         <span class="muted">–</span>
@@ -26,8 +16,8 @@
         <div class="l">Сьогодні ({{ toISODate(today) }})</div>
       </div>
       <div class="metric">
-        <div class="k mono">{{ formatMs(totalForMonth(tasks, selectedMonthDate)) }}</div>
-        <div class="l">За {{ monthLabel(selectedMonthDate) }}</div>
+        <div class="k mono">{{ formatMs(totalForMonth(tasks, currentMonthDate)) }}</div>
+        <div class="l">За {{ monthLabel(currentMonthDate) }}</div>
       </div>
       <div class="metric">
         <div class="k mono">{{ runningCount }} запущено</div>
@@ -42,29 +32,25 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { formatMs, toISODate, monthLabel, startOfDay, endOfDay } from '../helpers';
-import { totalForDate, totalForMonth, buildRowsForRange, buildTaskTotalsForRange } from '../helpers';
+import { formatMs, toISODate, monthLabel } from '../helpers';
+import { totalForDate, totalForMonth, buildTaskTotalsForRange } from '../helpers';
 
 const props = defineProps({
-  selectedDateStr: String,
-  selectedMonthStr: String,
   exportStartStr: String,
   exportEndStr: String,
   today: { type: Date, required: true },
   tasks: { type: Array, required: true },
   runningCount: { type: Number, required: true },
 });
-const emit = defineEmits(['update:selectedDateStr','update:selectedMonthStr','update:exportStartStr','update:exportEndStr']);
+const emit = defineEmits(['update:exportStartStr','update:exportEndStr']);
 
-const modelSelectedDateStr = computed({ get:()=>props.selectedDateStr, set:v=>emit('update:selectedDateStr', v) });
-const modelSelectedMonthStr = computed({ get:()=>props.selectedMonthStr, set:v=>emit('update:selectedMonthStr', v) });
 const modelExportStartStr = computed({ get:()=>props.exportStartStr, set:v=>emit('update:exportStartStr', v) });
 const modelExportEndStr = computed({ get:()=>props.exportEndStr, set:v=>emit('update:exportEndStr', v) });
 
-const selectedDate = computed(()=> new Date(props.selectedDateStr + 'T00:00:00'));
-const selectedMonthDate = computed(()=> new Date(props.selectedMonthStr + '-01T00:00:00'));
-
 const hiddenTA = ref(null);
+
+// Current month date (1st day) for monthly metrics
+const currentMonthDate = computed(()=> new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
 function exportRange(){
   const start = new Date(props.exportStartStr + 'T00:00:00').getTime();

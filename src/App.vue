@@ -3,8 +3,6 @@
     <HeaderBar @create-seed="createSeed" @clear-all="clearAll" />
 
     <FiltersAndMetrics
-      v-model:selectedDateStr="selectedDateStr"
-      v-model:selectedMonthStr="selectedMonthStr"
       v-model:exportStartStr="exportStartStr"
       v-model:exportEndStr="exportEndStr"
       :today="today"
@@ -36,15 +34,11 @@ const STORAGE_KEY = 'time-tracker.v1';
 const state = reactive({
   tasks: [],
   tab: 'all',
-  selectedDateStr: toInputDate(new Date()),
-  selectedMonthStr: toInputMonth(prevMonth(new Date())),
   exportStartStr: toInputDate(firstDayOfMonth(prevMonth(new Date()))),
   exportEndStr: toInputDate(lastDayOfMonth(prevMonth(new Date()))),
   tick: 0,
 });
 
-const selectedDate = computed(()=> new Date(state.selectedDateStr + 'T00:00:00'));
-const selectedMonthDate = computed(()=> new Date(state.selectedMonthStr + '-01T00:00:00'));
 const today = new Date();
 const knownProjects = computed(()=> uniq(state.tasks.map(t=>t.project).filter(Boolean)).sort());
 const knownTypes = computed(()=> uniq(state.tasks.map(t=>t.type).filter(Boolean)).sort());
@@ -138,5 +132,5 @@ watch(()=>state.tasks, save, {deep:true});
 onMounted(()=>{ load(); });
 
 // expose to template
-const { tasks, tab, selectedDateStr, selectedMonthStr, exportStartStr, exportEndStr, tick } = toRefs(state);
+const { tasks, tab, exportStartStr, exportEndStr, tick } = toRefs(state);
 </script>
