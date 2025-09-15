@@ -21,6 +21,7 @@ input[type="text"], input[type="url"], input[type="date"], input[type="month"], 
   padding:12px 12px;font-size:14px;outline:none;min-width:0;transition:border .2s ease, background .2s ease;
   color-scheme: dark;
 }
+input[type="date"]{padding-top:9px;padding-bottom:9px;}
 input:focus, select:focus, textarea:focus{border-color:#2a81ff;background:#0f1218}
 
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:linear-gradient(180deg,#181a20,#14161b);
