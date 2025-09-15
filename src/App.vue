@@ -2,12 +2,16 @@
   <div class="container" v-cloak>
     <HeaderBar @create-seed="createSeed" @clear-all="clearAll" />
 
-    <FiltersAndMetrics
-      v-model:exportStartStr="exportStartStr"
-      v-model:exportEndStr="exportEndStr"
+    <Metrics
       :today="today"
       :tasks="tasks"
       :running-count="runningCount"
+    />
+
+    <Export
+      v-model:exportStartStr="exportStartStr"
+      v-model:exportEndStr="exportEndStr"
+      :tasks="tasks"
     />
 
     <div class="hr"></div>
@@ -23,7 +27,8 @@
 <script setup>
 import { reactive, computed, watch, onMounted, toRefs } from 'vue';
 import HeaderBar from './components/HeaderBar.vue';
-import FiltersAndMetrics from './components/FiltersAndMetrics.vue';
+import Metrics from './components/Metrics.vue';
+import Export from './components/Export.vue';
 import NewTaskForm from './components/NewTaskForm.vue';
 import TabsBar from './components/TabsBar.vue';
 import TasksTable from './components/TasksTable.vue';
