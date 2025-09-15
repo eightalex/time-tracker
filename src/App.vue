@@ -1,195 +1,47 @@
 <template>
   <div class="container" v-cloak>
-    <div class="header">
-      <div class="brand">
-        <div class="logo"></div>
-        <h1>Трекер часу</h1>
-      </div>
-      <div class="row">
-        <button class="btn ghost" @click="createSeed">+ Швидко додати демо</button>
-        <button class="btn ghost" @click="clearAll" title="Очистити локальні дані">Очистити</button>
-      </div>
-    </div>
+    <HeaderBar @create-seed="createSeed" @clear-all="clearAll" />
 
-    <div class="card stack">
-      <div class="toolbar">
-        <div class="field">
-          <label class="muted">День:</label>
-          <input type="date" v-model="selectedDateStr"/>
-          <div class="chip mono">{{ formatMs(totalForDate(selectedDate)) }}</div>
-        </div>
-        <div class="field">
-          <label class="muted">Місяць:</label>
-          <input type="month" v-model="selectedMonthStr"/>
-          <div class="chip mono">{{ formatMs(totalForMonth(selectedMonthDate)) }}</div>
-        </div>
-        <div class="field">
-          <label class="muted">Експорт (період):</label>
-          <input type="date" v-model="exportStartStr"/>
-          <span class="muted">–</span>
-          <input type="date" v-model="exportEndStr"/>
-          <button class="btn" @click="copyTSV">Копіювати TSV</button>
-          <button class="btn" @click="downloadCSV">Завантажити CSV</button>
-        </div>
-      </div>
-
-      <div class="metrics">
-        <div class="metric">
-          <div class="k mono">{{ formatMs(todayMs) }}</div>
-          <div class="l">Сьогодні ({{ toISODate(today) }})</div>
-        </div>
-        <div class="metric">
-          <div class="k mono">{{ formatMs(monthMs) }}</div>
-          <div class="l">За {{ monthLabel(selectedMonthDate) }}</div>
-        </div>
-        <div class="metric">
-          <div class="k mono">{{ runningCount }} запущено</div>
-          <div class="l">Активні таймери</div>
-        </div>
-      </div>
-    </div>
+    <FiltersAndMetrics
+      v-model:selectedDateStr="selectedDateStr"
+      v-model:selectedMonthStr="selectedMonthStr"
+      v-model:exportStartStr="exportStartStr"
+      v-model:exportEndStr="exportEndStr"
+      :today="today"
+      :tasks="tasks"
+      :running-count="runningCount"
+    />
 
     <div class="hr"></div>
 
-    <div class="card">
-      <div class="toolbar">
-        <strong>Нова задача</strong>
-        <input class="grow" type="text" v-model="form.title" placeholder="Назва задачі" @keyup.enter="addTask"/>
-        <input type="url" v-model="form.link" placeholder="Посилання на Planka (необов'язково)"/>
-        <input type="text" v-model="form.project" list="projectsList" placeholder="Проєкт"/>
-        <datalist id="projectsList">
-          <option v-for="p in knownProjects" :key="p" :value="p"></option>
-        </datalist>
-        <input type="text" v-model="form.type" list="typesList" placeholder="Тип проєкту"/>
-        <datalist id="typesList">
-          <option v-for="t in knownTypes" :key="t" :value="t"></option>
-        </datalist>
-        <button class="btn primary" @click="addTask">Додати</button>
-      </div>
-    </div>
+    <NewTaskForm :known-projects="knownProjects" :known-types="knownTypes" @add-task="onAddTask" />
 
-    <div class="tabs card">
-      <div class="tab" :class="{active: tab==='all'}" @click="tab='all'">Всі задачі</div>
-      <div class="tab" :class="{active: tab==='archived'}" @click="tab='archived'">Архів</div>
-    </div>
+    <TabsBar v-model:tab="tab" />
 
-    <div class="card stack">
-      <div class="tbody">
-        <div v-if="filteredTasks.length===0" class="empty">Немає задач у цій вкладці.</div>
-        <div v-for="task in filteredTasks" :key="task.id" class="task">
-          <div class="head row">
-            <div class="title">
-              <template v-if="!task._edit">
-                <a v-if="task.link" :href="task.link" target="_blank" rel="noopener noreferrer">{{ task.title }}</a>
-                <span v-else>{{ task.title }}</span>
-              </template>
-              <template v-else>
-                <input type="text" v-model="task._draft.title"/>
-              </template>
-            </div>
-            <div class="chips">
-              <span class="chip" v-if="!task._edit">ID: {{ task.id.slice(-6) }}</span>
-              <span class="chip running" v-if="isRunning(task)">● Запущено</span>
-              <template v-if="task._edit">
-                <input type="url" v-model="task._draft.link" placeholder="Посилання"/>
-              </template>
-            </div>
-            <div class="controls">
-              <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
-              <button class="btn" v-else-if="isRunning(task)" @click="stop(task)" title="Зупинити таймер">⏸</button>
-              <button class="btn" v-if="!task._edit" @click="openEdit(task)">Редагувати</button>
-              <button class="btn" v-else @click="saveEdit(task)">Зберегти</button>
-              <button class="btn ghost" v-if="task._edit" @click="cancelEdit(task)">Скасувати</button>
-              <button class="btn" v-if="!task.archived && !task._edit" @click="archive(task)">Архівувати</button>
-              <button class="btn" v-if="task.archived && !task._edit" @click="unarchive(task)">Повернути</button>
-              <button class="btn red" v-if="!task._edit" @click="remove(task)">Видалити</button>
-            </div>
-          </div>
-          <div class="thead grid">
-            <div>Проєкт</div>
-            <div class="hide-sm">Тип проєкту</div>
-            <div class="nowrap">Сьогодні</div>
-            <div class="nowrap">За увесь час</div>
-          </div>
-          <div class="row grid">
-            <div class="hide-sm">
-              <template v-if="!task._edit">{{ task.project || '—' }}</template>
-              <template v-else>
-                <input type="text" v-model="task._draft.project" list="projectsList"/>
-              </template>
-            </div>
-            <div class="hide-sm">
-              <template v-if="!task._edit">{{ task.type || '—' }}</template>
-              <template v-else>
-                <input type="text" v-model="task._draft.type" list="typesList"/>
-              </template>
-            </div>
-            <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, selectedDate)) }}</div>
-            <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task)) }}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">
-        <div class="muted">Всього задач: {{ filteredTasks.length }}</div>
-        <div class="muted">Збереження: LocalStorage</div>
-      </div>
-    </div>
-
-    <textarea ref="hiddenTA" style="position:absolute;left:-9999px;top:-9999px;height:1px;width:1px"></textarea>
+    <TasksTable :filtered-tasks="filteredTasks" :selected-date="selectedDate" :tick="tick" @remove-task="onRemoveTask" />
   </div>
 </template>
 
 <script setup>
-import { reactive, computed, watch, onMounted, toRefs, ref } from 'vue';
+import { reactive, computed, watch, onMounted, toRefs } from 'vue';
+import HeaderBar from './components/HeaderBar.vue';
+import FiltersAndMetrics from './components/FiltersAndMetrics.vue';
+import NewTaskForm from './components/NewTaskForm.vue';
+import TabsBar from './components/TabsBar.vue';
+import TasksTable from './components/TasksTable.vue';
 
-// ---------- Helpers ----------
-function uniq(arr){ return Array.from(new Set(arr)); }
-function cryptoRandomId(){
-  if (window.crypto?.randomUUID) return crypto.randomUUID();
-  return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
-function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
-function firstDayOfMonth(d){ const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
-function lastDayOfMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()+1,0); x.setHours(23,59,59,999); return x; }
-function prevMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()-1, 1); return x; }
-function toInputDate(d){ return d.toISOString().slice(0,10); }
-function toInputMonth(d){ return d.toISOString().slice(0,7); }
-function toISODate(d){ return d.toISOString().slice(0,10); }
-function monthLabel(d){ return d.toLocaleDateString('uk-UA', { month:'long', year:'numeric' }); }
-function formatMs(ms){
-  const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
-  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
-  return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-}
-function formatMsS(ms){
-  const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
-  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
-  return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-}
-function toHHMM(ms){ const h = Math.floor(ms/3600000), m = Math.round((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
-function overlapMs(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return Math.max(0, e-s); }
-function midpointWithin(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return s + Math.floor((e-s)/2); }
-function csvSafe(v){
-  const s = (v==null?'':String(v));
-  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
-  return s;
-}
-function isRunning(task){ return !!task.running; }
+import { uniq, cryptoRandomId, prevMonth, firstDayOfMonth, lastDayOfMonth, toInputDate, toInputMonth } from './helpers';
 
 const STORAGE_KEY = 'time-tracker.v1';
 const state = reactive({
   tasks: [],
   tab: 'all',
-  form: { title:'', link:'', project:'', type:'' },
   selectedDateStr: toInputDate(new Date()),
   selectedMonthStr: toInputMonth(prevMonth(new Date())),
   exportStartStr: toInputDate(firstDayOfMonth(prevMonth(new Date()))),
   exportEndStr: toInputDate(lastDayOfMonth(prevMonth(new Date()))),
   tick: 0,
 });
-const hiddenTA = ref(null);
 
 const selectedDate = computed(()=> new Date(state.selectedDateStr + 'T00:00:00'));
 const selectedMonthDate = computed(()=> new Date(state.selectedMonthStr + '-01T00:00:00'));
@@ -197,9 +49,7 @@ const today = new Date();
 const knownProjects = computed(()=> uniq(state.tasks.map(t=>t.project).filter(Boolean)).sort());
 const knownTypes = computed(()=> uniq(state.tasks.map(t=>t.type).filter(Boolean)).sort());
 const filteredTasks = computed(()=> state.tasks.filter(t=> state.tab==='archived' ? t.archived : !t.archived));
-const runningCount = computed(()=> state.tasks.filter(isRunning).length);
-const todayMs = computed(()=> totalForDate(today));
-const monthMs = computed(()=> totalForMonth(selectedMonthDate.value));
+const runningCount = computed(()=> state.tasks.filter(t=> !!t.running).length);
 
 function addTask(){
   const f = state.form;
@@ -286,7 +136,11 @@ function downloadCSV(){
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
-function exportRange(){ const start = new Date(state.exportStartStr + 'T00:00:00').getTime(); const end = new Date(state.exportEndStr + 'T23:59:59').getTime(); if(end < start){ alert('Кінець періоду раніше початку'); } return {start, end}; }
+function onAddTask(payload){
+  const task = { id: cryptoRandomId(), title: payload.title, link: payload.link, project: payload.project, type: payload.type, archived: false, logs: [], running: null, createdAt: Date.now() };
+  state.tasks.unshift(task); save();
+}
+function onRemoveTask(id){ state.tasks = state.tasks.filter(t=> t.id !== id); save(); }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({tasks: state.tasks})); }
 function load(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return; const data = JSON.parse(raw); if(Array.isArray(data.tasks)) state.tasks = data.tasks; }catch(e){ console.warn('Load failed', e); } }
 function createSeed(){ if(!confirm('Додати кілька демо-задач?')) return; const now = Date.now(); const p = (title, project, type) => ({ id: cryptoRandomId(), title, link:'', project, type, archived:false, logs:[], running:null, createdAt: now }); const a = p('TB: виправити помилку ACF','Traffic Bureau','dev'); const b = p('Planka: валідація форм','Internal','dev'); const c = p('Рефакторинг таблиць','Mezha','frontend'); const lastM = prevMonth(new Date()); const lastMStart = firstDayOfMonth(lastM).getTime(); const day1 = lastMStart + 3*86400000 + 9*3600000; const day2 = lastMStart + 10*86400000 + 14*3600000; a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000}); b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000}); const todayStart = startOfDay(new Date()).getTime()+10*3600000; c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000}); state.tasks.unshift(a,b,c); save(); }
@@ -296,7 +150,6 @@ setInterval(()=> state.tick++, 1000);
 watch(()=>state.tasks, save, {deep:true});
 onMounted(()=>{ load(); });
 
-// expose to template (script setup auto-exposes)
-const { tasks, tab, form, selectedDateStr, selectedMonthStr, exportStartStr, exportEndStr } = toRefs(state);
+// expose to template
+const { tasks, tab, selectedDateStr, selectedMonthStr, exportStartStr, exportEndStr, tick } = toRefs(state);
 </script>
-
