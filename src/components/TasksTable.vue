@@ -12,13 +12,13 @@
             <template v-else>
               <input type="text" v-model="task._draft.title"/>
             </template>
-          </div>
-          <div class="chips">
-            <span class="chip" v-if="!task._edit">ID: {{ task.id.slice(-6) }}</span>
-            <span class="chip running" v-if="isRunning(task)">● Запущено</span>
             <template v-if="task._edit">
               <input type="url" v-model="task._draft.link" placeholder="Посилання"/>
             </template>
+          </div>
+          <div class="chips">
+            <span class="chip">ID: {{ task.id.slice(-6) }}</span>
+            <span class="chip running" v-if="isRunning(task)">● Запущено</span>
           </div>
           <div class="controls">
             <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
@@ -93,5 +93,6 @@ const todayDate = computed(()=> new Date());
 .chip.running{color:#22c55e;border-color:#22c55e}
 .task{padding-bottom:12px;border-bottom:1px solid var(--line)}
 .task:first-child{border-top:none}
-.task .title{width:100%;font-weight:600}
+.task .title{display:flex;gap:8px;width:100%;font-weight:600}
+.task .title input{flex:1}
 </style>
