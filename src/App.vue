@@ -138,4 +138,14 @@ onMounted(()=>{ load(); });
 
 // expose to template
 const { tasks, tab, exportStartStr, exportEndStr, tick } = toRefs(state);
+
+// ---- Browser title: show running timer HH:MM ----
+const defaultTitle = document.title;
+const runningTask = computed(()=> state.tasks.find(t=> !!t.running) || null);
+function formatHm(ms){ ms = Math.max(0, ms|0); const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+watch([runningTask, tick], ()=>{
+  const rt = runningTask.value;
+  if(rt && rt.running){ document.title = formatHm(Date.now() - rt.running.start); }
+  else { document.title = defaultTitle; }
+}, { immediate: true });
 </script>
