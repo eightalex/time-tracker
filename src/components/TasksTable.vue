@@ -51,7 +51,7 @@
             </template>
           </div>
 
-          <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, selectedDate, nowTs)) }}</div>
+          <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs)) }}</div>
           <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs)) }}</div>
         </div>
       </div>
@@ -65,7 +65,6 @@ import { isRunning, formatMsS, totalForTaskOnDate, totalForTaskOverall, cryptoRa
 
 const props = defineProps({
   filteredTasks: { type: Array, required: true },
-  selectedDate: { type: Date, required: true },
   tick: { type: Number, default: 0 },
 });
 const emit = defineEmits(['remove-task']);
@@ -84,6 +83,8 @@ function stopIfRunning(task){ if(isRunning(task)) stop(task); }
 
 // reactive "now" for live updates
 const nowTs = computed(()=>{ props.tick; return Date.now(); });
+// Always use today's date for per-day total, ignoring selectedDate
+const todayDate = computed(()=> new Date());
 </script>
 
 <style scoped>

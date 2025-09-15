@@ -18,7 +18,7 @@
 
     <TabsBar v-model:tab="tab" />
 
-    <TasksTable :filtered-tasks="filteredTasks" :selected-date="selectedDate" :tick="tick" @remove-task="onRemoveTask" />
+    <TasksTable :filtered-tasks="filteredTasks" :tick="tick" @remove-task="onRemoveTask" />
   </div>
 </template>
 
