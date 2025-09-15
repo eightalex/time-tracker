@@ -122,19 +122,6 @@ function copyTSV(){
   alert('Скопійовано у буфер — вставляйте в Google Sheets.');
 }
 
-function downloadCSV(){
-  const {start, end} = exportRange();
-  const rows = buildRowsForRange(start, end);
-  const header = ['Date','Task','Project','Type','Minutes','HH:MM','Link'];
-  const lines = [header.join(',')];
-  for(const r of rows){ const vals = [r.date, r.title, r.project, r.type, Math.round(r.ms/60000), toHHMM(r.ms), r.link].map(csvSafe); lines.push(vals.join(',')); }
-  const csv = lines.join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `time-export-${state.exportStartStr}_to_${state.exportEndStr}.csv`;
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
 
 function onAddTask(payload){
   const task = { id: cryptoRandomId(), title: payload.title, link: payload.link, project: payload.project, type: payload.type, archived: false, logs: [], running: null, createdAt: Date.now() };

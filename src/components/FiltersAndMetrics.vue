@@ -17,7 +17,6 @@
         <span class="muted">–</span>
         <input type="date" v-model="modelExportEndStr"/>
         <button class="btn" @click="copyTSV">Копіювати TSV</button>
-        <button class="btn" @click="downloadCSV">Завантажити CSV</button>
       </div>
     </div>
 
@@ -43,7 +42,7 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { formatMs, toISODate, monthLabel, toHHMM, startOfDay, endOfDay } from '../helpers';
+import { formatMs, toISODate, monthLabel, startOfDay, endOfDay } from '../helpers';
 import { totalForDate, totalForMonth, buildRowsForRange, buildTaskTotalsForRange } from '../helpers';
 
 const props = defineProps({
@@ -96,23 +95,6 @@ function copyTSV(){
   alert('Скопійовано у буфер — вставляйте в Google Sheets.');
 }
 
-function downloadCSV(){
-  const {start, end} = exportRange();
-  const rows = buildRowsForRange(props.tasks, start, end);
-  const header = ['Date','Task','Project','Type','Minutes','HH:MM','Link'];
-  const lines = [header.join(',')];
-  for(const r of rows){
-    const vals = [r.date, r.title, r.project, r.type, Math.round(r.ms/60000), toHHMM(r.ms), r.link]
-      .map(v=>v==null?'':String(v).replace(/"/g,'""'));
-    lines.push(vals.join(','));
-  }
-  const csv = lines.join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `time-export-${props.exportStartStr}_to_${props.exportEndStr}.csv`;
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
 </script>
 
 <style scoped>
@@ -126,4 +108,3 @@ function downloadCSV(){
 .metric .k{font-size:20px;font-weight:700}
 .metric .l{font-size:12px;color:var(--sub)}
 </style>
-

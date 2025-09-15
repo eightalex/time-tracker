@@ -27,16 +27,10 @@ export function formatMsS(ms){
   const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
   return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
-export function toHHMM(ms){ const h = Math.floor(ms/3600000), m = Math.round((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 
 // Math helpers
 export function overlapMs(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return Math.max(0, e-s); }
 export function midpointWithin(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return s + Math.floor((e-s)/2); }
-export function csvSafe(v){
-  const s = (v==null?'':String(v));
-  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
-  return s;
-}
 export function isRunning(task){ return !!task.running; }
 
 // Totals
@@ -120,4 +114,3 @@ export function buildTaskTotalsForRange(tasks, startTs, endTs, nowTs=Date.now())
   }
   return rows.sort((a,b)=> a.title.localeCompare(b.title));
 }
-
