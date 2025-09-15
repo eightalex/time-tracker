@@ -91,8 +91,9 @@ const todayDate = computed(()=> new Date());
 .chips{display:flex;gap:8px;flex-wrap:wrap;}
 .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
 .chip.running{color:#22c55e;border-color:#22c55e}
-.task{padding-bottom:12px;border-bottom:1px solid var(--line)}
+.task{border-bottom:1px solid var(--line)}
 .task:first-child{border-top:none}
+.task:last-child{border-bottom:none}
 .task .title{display:flex;gap:8px;width:100%;font-weight:600}
 .task .title input{flex:1}
 </style>
