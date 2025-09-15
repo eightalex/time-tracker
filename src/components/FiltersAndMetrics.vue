@@ -77,10 +77,11 @@ function copyTSV(){
   const {start, end} = exportRange();
   const rows = buildTaskTotalsForRange(props.tasks, start, end);
   const lines = [];
-  const clean = s => String(s ?? '').replace(/;/g, '');
+  // Remove tabs, newlines, and semicolons from fields; tabs delimit cells
+  const clean = s => String(s ?? '').replace(/[;\t\r\n]/g, ' ');
   for(const r of rows){
     const hours = Math.floor((r.ms/3600000)*100)/100;
-    lines.push([clean(r.title), clean(r.link), clean(r.project), clean(r.type), hours].join(';'));
+    lines.push([clean(r.title), clean(r.link), clean(r.project), clean(r.type), hours].join('\t'));
   }
   const tsv = lines.join('\n');
   if (navigator.clipboard?.writeText) {
