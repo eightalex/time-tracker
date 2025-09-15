@@ -2,11 +2,11 @@
   <div class="card stack">
     <div class="metrics">
       <div class="metric">
-        <div class="k mono">{{ formatMs(totalForDate(tasks, today)) }}</div>
+        <div class="k mono">{{ formatMs(todayTotal) }}</div>
         <div class="l">Сьогодні ({{ toISODate(today) }})</div>
       </div>
       <div class="metric">
-        <div class="k mono">{{ formatMs(totalForMonth(tasks, currentMonthDate)) }}</div>
+        <div class="k mono">{{ formatMs(monthTotal) }}</div>
         <div class="l">За {{ monthLabel(currentMonthDate) }}</div>
       </div>
       <div class="metric">
@@ -26,9 +26,14 @@ const props = defineProps({
   today: { type: Date, required: true },
   tasks: { type: Array, required: true },
   runningCount: { type: Number, required: true },
+  tick: { type: Number, default: 0 },
 });
 
 const currentMonthDate = computed(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+// Live totals (depend on tick so running timers update)
+const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today); });
+const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value); });
 </script>
 
 <style scoped>
@@ -37,4 +42,3 @@ const currentMonthDate = computed(() => new Date(new Date().getFullYear(), new D
 .metric .k{font-size:20px;font-weight:700}
 .metric .l{font-size:12px;color:var(--sub)}
 </style>
-

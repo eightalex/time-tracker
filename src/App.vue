@@ -6,6 +6,7 @@
       :today="today"
       :tasks="tasks"
       :running-count="runningCount"
+      :tick="tick"
     />
 
     <Export
