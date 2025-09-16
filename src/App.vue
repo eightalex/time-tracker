@@ -1,5 +1,7 @@
 <template>
   <div class="container" v-cloak>
+    <Analytics />
+
     <HeaderBar @create-seed="createSeed" @clear-all="clearAll" />
 
     <Metrics
@@ -27,6 +29,7 @@
 
 <script setup>
 import { reactive, computed, watch, onMounted, toRefs } from 'vue';
+import { Analytics } from '@vercel/analytics/next';
 import HeaderBar from './components/HeaderBar.vue';
 import Metrics from './components/Metrics.vue';
 import Export from './components/Export.vue';
