@@ -1,5 +1,10 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 
+const app = createApp(App);
 
-createApp(App).mount('#app');
+if (import.meta.env.PROD) {
+  import('@vercel/analytics').then(({ inject }) => inject());
+}
+
+app.mount('#app');
