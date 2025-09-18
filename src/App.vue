@@ -17,11 +17,40 @@
 
     <div class="hr"></div>
 
-    <NewTaskForm :known-projects="knownProjects" :known-types="knownTypes" @add-task="onAddTask" />
+    <div class="section-switcher card">
+      <button
+        class="section-switcher__btn"
+        :class="{ active: section === 'tasks' }"
+        @click="setSection('tasks')"
+      >
+        Задачі
+      </button>
+      <button
+        class="section-switcher__btn"
+        :class="{ active: section === 'entries' }"
+        @click="setSection('entries')"
+      >
+        Записи часу
+      </button>
+    </div>
 
-    <TabsBar v-model:tab="tab" />
+    <template v-if="section === 'tasks'">
+      <NewTaskForm :known-projects="knownProjects" :known-types="knownTypes" @add-task="onAddTask" />
 
-    <TasksTable :filtered-tasks="filteredTasks" :tick="tick" @remove-task="onRemoveTask" />
+      <TabsBar v-model:tab="tab" />
+
+      <TasksTable :filtered-tasks="filteredTasks" :tick="tick" @remove-task="onRemoveTask" />
+    </template>
+
+    <TimeEntries
+      v-else
+      :entries="entriesForSelectedDate"
+      :date-str="entriesDateStr"
+      :total-ms="entriesTotalForSelectedDate"
+      @update-date="onEntriesDateChange"
+      @update-entry="onUpdateEntry"
+      @remove-entry="onRemoveEntry"
+    />
   </div>
 </template>
 
@@ -33,23 +62,113 @@ import Export from './components/Export.vue';
 import NewTaskForm from './components/NewTaskForm.vue';
 import TabsBar from './components/TabsBar.vue';
 import TasksTable from './components/TasksTable.vue';
+import TimeEntries from './components/TimeEntries.vue';
 
-import { uniq, cryptoRandomId, prevMonth, firstDayOfMonth, lastDayOfMonth, toInputDate, toInputMonth } from './helpers';
+import {
+  uniq,
+  cryptoRandomId,
+  prevMonth,
+  firstDayOfMonth,
+  lastDayOfMonth,
+  toInputDate,
+  toInputMonth,
+  startOfDay,
+  endOfDay,
+  overlapMs,
+  toISODate,
+  midpointWithin,
+  isRunning,
+} from './helpers';
 
 const STORAGE_KEY = 'time-tracker.v1';
 const state = reactive({
   tasks: [],
   tab: 'all',
+  section: 'tasks',
   exportStartStr: toInputDate(firstDayOfMonth(prevMonth(new Date()))),
   exportEndStr: toInputDate(lastDayOfMonth(prevMonth(new Date()))),
+  entriesDateStr: toInputDate(new Date()),
   tick: 0,
 });
 
 const today = new Date();
-const knownProjects = computed(()=> uniq(state.tasks.map(t=>t.project).filter(Boolean)).sort());
-const knownTypes = computed(()=> uniq(state.tasks.map(t=>t.type).filter(Boolean)).sort());
-const filteredTasks = computed(()=> state.tasks.filter(t=> state.tab==='archived' ? t.archived : !t.archived));
-const runningCount = computed(()=> state.tasks.filter(t=> !!t.running).length);
+const knownProjects = computed(() => uniq(state.tasks.map((t) => t.project).filter(Boolean)).sort());
+const knownTypes = computed(() => uniq(state.tasks.map((t) => t.type).filter(Boolean)).sort());
+const filteredTasks = computed(() => state.tasks.filter((t) => (state.tab === 'archived' ? t.archived : !t.archived)));
+const runningCount = computed(() => state.tasks.filter((t) => !!t.running).length);
+const entriesForSelectedDate = computed(() => {
+  const dateStr = state.entriesDateStr;
+  if (!dateStr) return [];
+  const selectedDate = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime())) return [];
+  const dayStart = startOfDay(selectedDate).getTime();
+  const dayEnd = endOfDay(selectedDate).getTime();
+  const rows = [];
+  for (const task of state.tasks) {
+    if (!Array.isArray(task.logs)) continue;
+    for (const log of task.logs) {
+      const start = typeof log.start === 'number' ? log.start : null;
+      const end = typeof log.end === 'number' ? log.end : null;
+      if (start === null || end === null) continue;
+      if (overlapMs(start, end, dayStart, dayEnd) <= 0) continue;
+      const ms = typeof log.ms === 'number' ? log.ms : Math.max(0, end - start);
+      rows.push({
+        taskId: task.id,
+        logId: log.id,
+        taskTitle: task.title,
+        project: task.project || '',
+        type: task.type || '',
+        start,
+        end,
+        ms,
+      });
+    }
+  }
+  return rows.sort((a, b) => a.start - b.start);
+});
+const entriesTotalForSelectedDate = computed(() => {
+  const dateStr = state.entriesDateStr;
+  if (!dateStr) return 0;
+  const selectedDate = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(selectedDate.getTime())) return 0;
+  return totalForDate(selectedDate);
+});
+
+function setSection(nextSection) {
+  state.section = nextSection;
+}
+
+function onEntriesDateChange(value) {
+  state.entriesDateStr = value || toInputDate(new Date());
+}
+
+function onUpdateEntry(payload) {
+  if (!payload) return;
+  const { taskId, logId, start, end } = payload;
+  if (typeof start !== 'number' || typeof end !== 'number') return;
+  if (end < start) {
+    alert('Час завершення не може бути раніше за час початку.');
+    return;
+  }
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  const log = task.logs?.find((l) => l.id === logId);
+  if (!log) return;
+  log.start = start;
+  log.end = end;
+  log.ms = Math.max(0, end - start);
+  save();
+}
+
+function onRemoveEntry(payload) {
+  if (!payload) return;
+  const { taskId, logId } = payload;
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  if (!confirm('Видалити запис часу? Дію неможливо скасувати.')) return;
+  task.logs = task.logs.filter((log) => log.id !== logId);
+  save();
+}
 
 function addTask(){
   const f = state.form;
@@ -138,7 +257,7 @@ watch(()=>state.tasks, save, {deep:true});
 onMounted(()=>{ load(); });
 
 // expose to template
-const { tasks, tab, exportStartStr, exportEndStr, tick } = toRefs(state);
+const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, tick } = toRefs(state);
 
 // ---- Browser title: show running timer HH:MM ----
 const defaultTitle = document.title;
