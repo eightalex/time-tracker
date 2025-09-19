@@ -10,7 +10,7 @@
     </div>
 
     <div v-if="entries.length" class="time-entries__list">
-      <div v-for="entry in entries" :key="entry.logId" class="time-entry">
+      <div v-for="entry in reversedEntries" :key="entry.logId" class="time-entry">
         <div class="time-entry__header">
           <div class="time-entry__title">
             {{ entry.taskTitle || 'Без назви' }}
@@ -99,6 +99,8 @@ const modelDate = computed({
   get: () => props.dateStr,
   set: (value) => emit('update-date', value),
 });
+
+const reversedEntries = computed(() => [...props.entries].reverse());
 
 const timeFormatter = new Intl.DateTimeFormat('uk-UA', {
   hour: '2-digit',
