@@ -1,8 +1,14 @@
 <template>
-  <div class="card stack">
+  <div class="card simple stack">
     <div class="tbody">
-      <div v-if="filteredTasks.length===0" class="empty">Немає задач у цій вкладці.</div>
-      <div v-for="task in filteredTasks" :key="task.id" class="task">
+      <div v-if="orderedTasks.length===0" class="empty">Немає задач у цій вкладці.</div>
+      <TransitionGroup v-else name="task-move" tag="div">
+        <div
+          v-for="task in orderedTasks"
+          :key="task.id"
+          class="task"
+          :class="{ 'is-running': isRunning(task) }"
+        >
         <div class="head row">
           <div class="title">
             <template v-if="!task._edit">
@@ -22,7 +28,7 @@
           </div>
           <div class="controls">
             <button class="btn green" v-if="!isRunning(task) && !task._edit" @click="start(task)" title="Старт таймера">▶︎</button>
-            <button class="btn" v-else-if="isRunning(task)" @click="stop(task)" title="Зупинити таймер">⏸</button>
+            <button class="btn grey" v-else-if="isRunning(task)" @click="stop(task)" title="Зупинити таймер">⏸</button>
             <button class="btn" v-if="!task._edit" @click="openEdit(task)">Редагувати</button>
             <button class="btn" v-else @click="saveEdit(task)">Зберегти</button>
             <button class="btn ghost" v-if="task._edit" @click="cancelEdit(task)">Скасувати</button>
@@ -54,7 +60,8 @@
           <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs)) }}</div>
           <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs)) }}</div>
         </div>
-      </div>
+        </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>
@@ -81,6 +88,10 @@ function start(task){ props.filteredTasks.forEach(t=>{ if(isRunning(t)) stop(t);
 function stop(task){ if(!isRunning(task)) return; const start = new Date(task.running.start); const end = new Date(); const dur = Math.max(0, end - start); task.logs.push({ id: cryptoRandomId(), start: start.getTime(), end: end.getTime(), ms: dur }); task.running = null; }
 function stopIfRunning(task){ if(isRunning(task)) stop(task); }
 
+const orderedTasks = computed(()=> {
+  return [...props.filteredTasks].sort((a, b) => Number(isRunning(b)) - Number(isRunning(a)));
+});
+
 // reactive "now" for live updates
 const nowTs = computed(()=>{ props.tick; return Date.now(); });
 // Always use today's date for per-day total, ignoring selectedDate
@@ -91,9 +102,14 @@ const todayDate = computed(()=> new Date());
 .chips{display:flex;gap:8px;flex-wrap:wrap;}
 .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
 .chip.running{color:#22c55e;border-color:#22c55e}
-.task{border-bottom:1px solid var(--line)}
-.task:first-child{border-top:none}
-.task:last-child{border-bottom:none}
+.task{background:var(--surface);border:1px solid var(--line)}
+.task.is-running{margin-bottom: 16px;border-radius: var(--radius) !important;}
+.task.is-running + .task{border-radius:var(--radius) var(--radius) 0 0;}
+.task:first-child{border-radius:var(--radius) var(--radius) 0 0;}
+.task:last-child{border-radius:0 0 var(--radius) var(--radius);}
 .task .title{display:flex;gap:8px;width:100%;font-weight:600}
 .task .title input{flex:1}
+.task-move-enter-active,.task-move-leave-active{transition:opacity .3s all,transform .3s ease;}
+.task-move-enter-from,.task-move-leave-to{opacity:0;transform:translateY(8px);}
+.task-move-move{transition:transform .3s ease;}
 </style>
