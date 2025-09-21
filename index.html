@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Трекер часу</title>
+  <script>
+    (function(){
+      try{
+        const v = localStorage.getItem('time-tracker.theme');
+        if(v === 'light' || v === 'dark'){
+          document.documentElement.setAttribute('data-theme', v);
+        }else{
+          document.documentElement.removeAttribute('data-theme');
+        }
+      }catch(e){}
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <link rel="stylesheet" href="/src/styles.css">
 </head>

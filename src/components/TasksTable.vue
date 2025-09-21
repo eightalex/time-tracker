@@ -100,7 +100,7 @@ const todayDate = computed(()=> new Date());
 
 <style scoped>
 .chips{display:flex;gap:8px;flex-wrap:wrap;}
-.chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#12141a;color:var(--sub);font-size:12px}
+.chip{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--segment-bg);color:var(--sub);font-size:12px}
 .chip.running{color:#22c55e;border-color:#22c55e}
 .task{background:var(--surface);border:1px solid var(--line)}
 .task.is-running{margin-bottom: 16px;border-radius: var(--radius) !important;}
