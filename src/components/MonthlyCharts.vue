@@ -3,8 +3,14 @@
     <div class="monthly-chart__header">
       <div>
         <h2 class="monthly-chart__title">Графік по днях</h2>
-        <p class="monthly-chart__subtitle">Поточний місяць: {{ monthTitle }}</p>
+        <p class="monthly-chart__subtitle">Місяць: {{ monthTitle }}</p>
       </div>
+      <input
+        class="monthly-chart__month"
+        type="month"
+        v-model="selectedMonth"
+        aria-label="Оберіть місяць"
+      />
     </div>
 
     <div v-if="days.length" class="monthly-chart__body">
@@ -311,8 +317,9 @@ function toggleLegend(taskId) {
 
 .monthly-chart__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
 .monthly-chart__title {
