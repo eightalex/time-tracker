@@ -14,6 +14,6 @@ const modelTab = computed({ get:()=>props.tab, set:v=>emit('update:tab', v) });
 
 <style scoped>
 .tabs{display:flex;gap:8px;margin: 14px 0;border-bottom:1px solid var(--line);padding:10px 12px}
-.tab{padding:8px 12px;border-radius:999px;border:1px solid transparent;cursor:pointer;color:var(--sub)}
+.tab{padding:8px 12px;border-radius:999px;border:1px solid transparent;cursor:pointer;color:var(--sub);font-size:14px;user-select:none;transition:background .2s,border-color .2s,color .2s}
 .tab.active{background:var(--segment-active);border-color:var(--line);color:var(--text)}
 </style>
