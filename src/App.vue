@@ -32,6 +32,13 @@
       >
         Записи часу
       </button>
+      <button
+        class="section-switcher__btn"
+        :class="{ active: section === 'charts' }"
+        @click="setSection('charts')"
+      >
+        Графіки
+      </button>
     </div>
 
     <template v-if="section === 'tasks'">
@@ -43,13 +50,20 @@
     </template>
 
     <TimeEntries
-      v-else
+      v-else-if="section === 'entries'"
       :entries="entriesForSelectedDate"
       :date-str="entriesDateStr"
       :total-ms="entriesTotalForSelectedDate"
       @update-date="onEntriesDateChange"
       @update-entry="onUpdateEntry"
       @remove-entry="onRemoveEntry"
+    />
+
+    <MonthlyCharts
+      v-else
+      :tasks="tasks"
+      :today="today"
+      :tick="tick"
     />
   </div>
 </template>
@@ -63,6 +77,7 @@ import NewTaskForm from './components/NewTaskForm.vue';
 import TabsBar from './components/TabsBar.vue';
 import TasksTable from './components/TasksTable.vue';
 import TimeEntries from './components/TimeEntries.vue';
+import MonthlyCharts from './components/MonthlyCharts.vue';
 
 import {
   uniq,
