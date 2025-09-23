@@ -5,7 +5,13 @@
       <h1>Трекер часу</h1>
     </div>
     <div class="row">
-      <button class="btn ghost" @click="$emit('create-seed')">+ Швидко додати демо</button>
+      <button
+        v-if="!hasTasks"
+        class="btn ghost"
+        @click="$emit('create-seed')"
+      >
+        + Швидко додати демо
+      </button>
       <button class="btn ghost" @click="$emit('clear-all')" title="Очистити локальні дані">Очистити</button>
       <ThemeSwitcher />
     </div>
@@ -14,7 +20,10 @@
 
 <script setup>
 import ThemeSwitcher from './ThemeSwitcher.vue';
-defineEmits(['create-seed','clear-all']);
+const emit = defineEmits(['create-seed','clear-all']);
+const props = defineProps({
+  hasTasks: { type: Boolean, default: false },
+});
 </script>
 
 <style scoped>

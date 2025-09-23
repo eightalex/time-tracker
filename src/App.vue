@@ -1,6 +1,10 @@
 <template>
   <div class="container" v-cloak>
-    <HeaderBar @create-seed="createSeed" @clear-all="clearAll" />
+    <HeaderBar
+      :has-tasks="tasks.length > 0"
+      @create-seed="createSeed"
+      @clear-all="clearAll"
+    />
 
     <Metrics
       :today="today"
