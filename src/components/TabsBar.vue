@@ -1,6 +1,7 @@
 <template>
   <div class="tabs card">
     <div class="tab" :class="{active: modelTab==='all'}" @click="modelTab='all'">Всі задачі</div>
+    <div class="tab" :class="{active: modelTab==='recurring'}" @click="modelTab='recurring'">Постійні</div>
     <div class="tab" :class="{active: modelTab==='archived'}" @click="modelTab='archived'">Архів</div>
   </div>
 </template>

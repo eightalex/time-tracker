@@ -114,7 +114,17 @@ const state = reactive({
 const today = ref(new Date());
 const knownProjects = computed(() => uniq(state.tasks.map((t) => t.project).filter(Boolean)).sort());
 const knownTypes = computed(() => uniq(state.tasks.map((t) => t.type).filter(Boolean)).sort());
-const filteredTasks = computed(() => state.tasks.filter((t) => (state.tab === 'archived' ? t.archived : !t.archived)));
+const filteredTasks = computed(() => {
+  return state.tasks.filter((t) => {
+    if (state.tab === 'archived') {
+      return !!t.archived;
+    }
+    if (state.tab === 'recurring') {
+      return !t.archived && !!t.persistent;
+    }
+    return !t.archived && !t.persistent;
+  });
+});
 const runningCount = computed(() => state.tasks.filter((t) => !!t.running).length);
 watch(
   () => state.tick,
@@ -211,7 +221,7 @@ function addTask(){
   if(!title) return alert('Вкажіть назву задачі');
   const task = {
     id: cryptoRandomId(), title, link: (f.link||'').trim(), project: (f.project||'').trim(), type: (f.type||'').trim(),
-    archived: false, logs: [], running: null, createdAt: Date.now()
+    archived: false, persistent: false, logs: [], running: null, createdAt: Date.now()
   };
   state.tasks.unshift(task);
   state.form = { title:'', link:'', project:'', type:'' };
@@ -285,13 +295,13 @@ function copyTSV(){
 
 
 function onAddTask(payload){
-  const task = { id: cryptoRandomId(), title: payload.title, link: payload.link, project: payload.project, type: payload.type, archived: false, logs: [], running: null, createdAt: Date.now() };
+  const task = { id: cryptoRandomId(), title: payload.title, link: payload.link, project: payload.project, type: payload.type, archived: false, persistent: false, logs: [], running: null, createdAt: Date.now() };
   state.tasks.unshift(task); save();
 }
 function onRemoveTask(id){ state.tasks = state.tasks.filter(t=> t.id !== id); save(); }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({tasks: state.tasks})); }
 function load(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return; const data = JSON.parse(raw); if(Array.isArray(data.tasks)) state.tasks = data.tasks; }catch(e){ console.warn('Load failed', e); } }
-function createSeed(){ if(!confirm('Додати кілька демо-задач?')) return; const now = Date.now(); const p = (title, project, type) => ({ id: cryptoRandomId(), title, link:'', project, type, archived:false, logs:[], running:null, createdAt: now }); const a = p('TB: виправити помилку ACF','Traffic Bureau','dev'); const b = p('Planka: валідація форм','Internal','dev'); const c = p('Рефакторинг таблиць','Mezha','frontend'); const lastM = prevMonth(new Date()); const lastMStart = firstDayOfMonth(lastM).getTime(); const day1 = lastMStart + 3*86400000 + 9*3600000; const day2 = lastMStart + 10*86400000 + 14*3600000; a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000}); b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000}); const today = new Date(); today.setHours(10,0,0,0); const todayStart = today.getTime(); c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000}); state.tasks.unshift(a,b,c); save(); }
+function createSeed(){ if(!confirm('Додати кілька демо-задач?')) return; const now = Date.now(); const p = (title, project, type) => ({ id: cryptoRandomId(), title, link:'', project, type, archived:false, persistent:false, logs:[], running:null, createdAt: now }); const a = p('TB: виправити помилку ACF','Traffic Bureau','dev'); const b = p('Planka: валідація форм','Internal','dev'); const c = p('Рефакторинг таблиць','Mezha','frontend'); const lastM = prevMonth(new Date()); const lastMStart = firstDayOfMonth(lastM).getTime(); const day1 = lastMStart + 3*86400000 + 9*3600000; const day2 = lastMStart + 10*86400000 + 14*3600000; a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000}); b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000}); const today = new Date(); today.setHours(10,0,0,0); const todayStart = today.getTime(); c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000}); state.tasks.unshift(a,b,c); save(); }
 function clearAll(){ if(confirm('Очистити всі локальні дані?')) { localStorage.removeItem(STORAGE_KEY); state.tasks=[]; } }
 
 setInterval(()=> state.tick++, 1000);

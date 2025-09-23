@@ -83,6 +83,18 @@
                                 @click="unarchive(task)"
                             >Повернути</button>
                             <button
+                                class="btn"
+                                v-if="!task.archived && !task._edit && !task.persistent"
+                                @click="makePersistent(task)"
+                                title="Додати до постійних"
+                            >Постійна</button>
+                            <button
+                                class="btn"
+                                v-if="!task.archived && !task._edit && task.persistent"
+                                @click="makeRegular(task)"
+                                title="Прибрати з постійних"
+                            >Звичайна</button>
+                            <button
                                 class="btn red"
                                 v-if="!task._edit"
                                 @click="emitRemove(task)"
@@ -164,6 +176,14 @@ function archive(task) {
 
 function unarchive(task) {
     task.archived = false;
+}
+
+function makePersistent(task) {
+    task.persistent = true;
+}
+
+function makeRegular(task) {
+    task.persistent = false;
 }
 
 function emitRemove(task) {
