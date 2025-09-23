@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { formatMs, formatMsS, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
 
 const props = defineProps({
@@ -48,40 +48,85 @@ const currentMonthDate = computed(() => new Date(new Date().getFullYear(), new D
 const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today); });
 const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value); });
 
-const latestRunningTask = computed(() => {
-  props.tick;
-  let latest = null;
-  for (const task of props.tasks) {
+const lastKnownTask = ref(null);
+
+watch(
+  () => props.tasks,
+  (tasks) => {
+    refreshLastKnown(tasks);
+  },
+  { deep: true, immediate: true }
+);
+
+function refreshLastKnown(tasks) {
+  const list = Array.isArray(tasks) ? tasks : [];
+  let runningCandidate = null;
+  let runningStart = -Infinity;
+  let lastLogCandidate = null;
+  let lastLogStart = -Infinity;
+
+  for (const task of list) {
     if (!task || typeof task !== 'object') continue;
-    if (!isRunning(task)) continue;
-    const start = task.running?.start;
-    if (typeof start !== 'number') continue;
-    if (!latest || start > latest.start) {
-      latest = {
-        taskId: task.id,
-        title: task.title || 'Без назви',
-        start,
-      };
+    const title = task.title || 'Без назви';
+    if (isRunning(task)) {
+      const start = task.running?.start;
+      if (typeof start === 'number' && start > runningStart) {
+        runningStart = start;
+        runningCandidate = {
+          taskId: task.id,
+          title,
+          start,
+          isRunning: true,
+        };
+      }
+    }
+    if (Array.isArray(task.logs)) {
+      for (const log of task.logs) {
+        const start = typeof log?.start === 'number' ? log.start : null;
+        if (start === null) continue;
+        const end = typeof log?.end === 'number' ? log.end : start;
+        const duration = typeof log?.ms === 'number' ? log.ms : Math.max(0, end - start);
+        if (start > lastLogStart) {
+          lastLogStart = start;
+          lastLogCandidate = {
+            taskId: task.id,
+            title,
+            start,
+            isRunning: false,
+            duration,
+          };
+        }
+      }
     }
   }
-  return latest;
-});
 
-const activeTaskTitle = computed(() => latestRunningTask.value?.title || 'Немає активних таймерів');
+  if (runningCandidate) {
+    lastKnownTask.value = runningCandidate;
+  } else if (lastLogCandidate) {
+    lastKnownTask.value = lastLogCandidate;
+  } else {
+    lastKnownTask.value = null;
+  }
+}
+
+const activeTaskTitle = computed(() => lastKnownTask.value?.title || 'Немає активних таймерів');
 
 const activeTaskTime = computed(() => {
   props.tick;
-  const task = latestRunningTask.value;
+  const task = lastKnownTask.value;
   if (!task) return '00:00:00';
-  return formatMsS(Math.max(0, Date.now() - task.start));
+  if (task.isRunning) {
+    return formatMsS(Math.max(0, Date.now() - task.start));
+  }
+  return formatMsS(task.duration ?? 0);
 });
 
-const activeToggleIcon = computed(() => (latestRunningTask.value ? '⏸' : '▶︎'));
+const activeToggleIcon = computed(() => (lastKnownTask.value?.isRunning ? '⏸' : '▶︎'));
 
-const isActiveToggleDisabled = computed(() => !latestRunningTask.value);
+const isActiveToggleDisabled = computed(() => !lastKnownTask.value);
 
 function onToggleActive() {
-  const task = latestRunningTask.value;
+  const task = lastKnownTask.value;
   if (!task) return;
   emit('toggle-active-task', { taskId: task.taskId });
 }
