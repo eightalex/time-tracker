@@ -42,7 +42,17 @@
     </div>
 
     <div v-if="legend.length" class="monthly-chart__legend">
-      <div v-for="item in legend" :key="item.id" class="legend-item">
+      <div
+        v-for="item in legend"
+        :key="item.id"
+        class="legend-item"
+        :class="{ 'is-active': activeTaskId === item.id }"
+        role="button"
+        tabindex="0"
+        @click="toggleLegend(item.id)"
+        @keydown.enter.prevent="toggleLegend(item.id)"
+        @keydown.space.prevent="toggleLegend(item.id)"
+      >
         <span class="legend-item__swatch" :style="{ backgroundColor: item.color }"></span>
         <span class="legend-item__title">{{ item.title }}</span>
         <span class="legend-item__value mono">{{ item.hours }}</span>
@@ -71,6 +81,7 @@ const props = defineProps({
 });
 
 const selectedMonth = ref('');
+const activeTaskId = ref(null);
 
 watch(
   () => props.today,
@@ -97,7 +108,7 @@ const monthDate = computed(() => {
 
 const monthTitle = computed(() => monthLabel(monthDate.value));
 
-const days = computed(() => {
+const rawDays = computed(() => {
   props.tick; // ensure recompute while таймери працюють
   return buildMonthlyDays(props.tasks, monthDate.value);
 });
@@ -108,7 +119,7 @@ const maxTotalMs = computed(() => {
 
 const legend = computed(() => {
   const totals = new Map();
-  for (const day of days.value) {
+  for (const day of rawDays.value) {
     for (const seg of day.segments) {
       const prev = totals.get(seg.id) || { id: seg.id, title: seg.title, ms: 0, color: seg.color };
       prev.ms += seg.ms;
@@ -124,6 +135,25 @@ const legend = computed(() => {
       color: item.color,
       hours: formatHours(item.ms),
     }));
+});
+
+watch(legend, (items) => {
+  if (!items.length || !items.some((item) => item.id === activeTaskId.value)) {
+    activeTaskId.value = null;
+  }
+});
+
+const days = computed(() => {
+  if (!activeTaskId.value) return rawDays.value;
+  return rawDays.value.map((day) => {
+    const segments = day.segments.filter((seg) => seg.id === activeTaskId.value);
+    const totalMs = segments.reduce((sum, seg) => sum + seg.ms, 0);
+    return {
+      ...day,
+      segments,
+      totalMs,
+    };
+  });
 });
 
 function barHeight(ms) {
@@ -267,6 +297,10 @@ function makeColor(seed, fallbackTitle) {
   const lightness = 60;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
+
+function toggleLegend(taskId) {
+  activeTaskId.value = activeTaskId.value === taskId ? null : taskId;
+}
 </script>
 
 <style scoped>
@@ -295,9 +329,9 @@ function makeColor(seed, fallbackTitle) {
 
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(6px, 1fr));
   align-items: end;
-  gap: 8px;
+  gap: 6px;
   min-height: 200px;
 }
 
@@ -353,6 +387,8 @@ function makeColor(seed, fallbackTitle) {
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .legend-item__swatch {
@@ -369,5 +405,29 @@ function makeColor(seed, fallbackTitle) {
 
 .legend-item__value {
   font-weight: 600;
+}
+
+.legend-item:hover {
+  border-color: var(--accent, #2563eb);
+}
+
+.legend-item.is-active {
+  border-color: var(--accent, #2563eb);
+  background-color: rgba(37, 99, 235, 0.12);
+}
+
+.legend-item:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
+}
+
+.legend-item.is-active {
+  border-color: var(--accent, #2563eb);
+  background-color: color-mix(in srgb, var(--accent, #2563eb) 12%, transparent);
+}
+
+.legend-item:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
 }
 </style>
