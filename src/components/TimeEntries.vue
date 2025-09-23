@@ -82,7 +82,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { formatMs } from '../helpers';
+import { formatMs, toInputDate } from '../helpers';
 
 const props = defineProps({
   entries: { type: Array, default: () => [] },
@@ -99,6 +99,16 @@ const modelDate = computed({
   get: () => props.dateStr,
   set: (value) => emit('update-date', value),
 });
+
+watch(
+  () => props.dateStr,
+  (value) => {
+    if (!value) {
+      emit('update-date', toInputDate(new Date()));
+    }
+  },
+  { immediate: true }
+);
 
 const reversedEntries = computed(() => [...props.entries].reverse());
 
