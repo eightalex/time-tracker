@@ -8,7 +8,7 @@
     </div>
 
     <div v-if="days.length" class="monthly-chart__body">
-      <div class="chart-grid">
+      <div class="chart-grid" ref="chartGridRef">
         <div
           v-for="day in days"
           :key="day.date"
@@ -30,7 +30,9 @@
                 backgroundColor: segment.color,
                 flexGrow: segment.ms,
               }"
-              :title="segment.tooltip"
+              :data-tooltip="segment.tooltip"
+              @mouseenter="setTooltipSide($event)"
+              @mouseleave="resetTooltipSide($event)"
             ></div>
           </div>
           <div class="chart-grid__label">{{ day.day }}</div>
@@ -82,6 +84,7 @@ const props = defineProps({
 
 const selectedMonth = ref('');
 const activeTaskId = ref(null);
+const chartGridRef = ref(null);
 
 watch(
   () => props.today,
@@ -171,6 +174,11 @@ function barAria(day) {
 function formatHours(ms) {
   const hours = ms / 3600000;
   return `${hours.toFixed(1)} год`;
+}
+
+function buildTooltip(title, ms) {
+  const hhmm = formatMs(ms);
+  return `${title}\n${hhmm} (${formatHours(ms)})`;
 }
 
 function parseMonth(value) {
@@ -263,7 +271,7 @@ function buildMonthlyDays(tasks, monthStartDate) {
           title: item.title,
           ms: item.ms,
           color,
-          tooltip: `${item.title}: ${formatHours(item.ms)}`,
+          tooltip: buildTooltip(item.title, item.ms),
         };
       });
     results.push({
@@ -300,6 +308,28 @@ function makeColor(seed, fallbackTitle) {
 
 function toggleLegend(taskId) {
   activeTaskId.value = activeTaskId.value === taskId ? null : taskId;
+}
+
+function setTooltipSide(event) {
+  const el = event.currentTarget;
+  if (!el || !chartGridRef.value) return;
+  const containerRect = chartGridRef.value.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  const approxWidth = 240;
+  const spaceRight = containerRect.right - rect.right;
+  const spaceLeft = rect.left - containerRect.left;
+  const preferLeft = spaceRight < approxWidth && spaceLeft > spaceRight;
+  if (preferLeft) {
+    el.dataset.side = 'left';
+  } else {
+    delete el.dataset.side;
+  }
+}
+
+function resetTooltipSide(event) {
+  const el = event.currentTarget;
+  if (!el) return;
+  delete el.dataset.side;
 }
 </script>
 
@@ -350,18 +380,85 @@ function toggleLegend(taskId) {
 
 .chart-grid__bar {
   width: 15px;
-  border-radius: 5px 5px 0 0;
   background: var(--segment-bg);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   gap: 1px;
-  overflow: hidden;
   transition: height 0.2s ease;
 }
 
 .chart-grid__segment {
   width: 100%;
+  position: relative;
+}
+
+.chart-grid__segment:first-child {
+  border-radius: 5px 5px 0 0;
+}
+
+.chart-grid__segment::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translate(10px, -50%);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 10;
+  max-width: 240px;
+}
+
+.chart-grid__segment[data-side='left']::after {
+  left: auto;
+  right: 100%;
+  transform: translate(-10px, -50%);
+}
+
+.chart-grid__segment:hover::after,
+.chart-grid__segment:focus-visible::after {
+  opacity: 1;
+  transform: translate(12px, -50%);
+}
+
+.chart-grid__segment[data-side='left']:hover::after,
+.chart-grid__segment[data-side='left']:focus-visible::after {
+  transform: translate(-12px, -50%);
+}
+
+.chart-grid__segment::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: calc(100% - 1px);
+  transform: translateY(-50%);
+  border: 7px solid transparent;
+  border-right-color: var(--surface);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 11;
+}
+
+.chart-grid__segment[data-side='left']::before {
+  left: auto;
+  right: calc(100% - 1px);
+  border-right-color: transparent;
+  border-left-color: var(--surface);
+}
+
+.chart-grid__segment:hover::before,
+.chart-grid__segment:focus-visible::before {
+  opacity: 1;
 }
 
 .chart-grid__label {
@@ -415,15 +512,6 @@ function toggleLegend(taskId) {
 .legend-item.is-active {
   border-color: var(--accent, #2563eb);
   background-color: rgba(37, 99, 235, 0.12);
-}
-
-.legend-item:focus-visible {
-  outline: 2px solid var(--accent, #2563eb);
-  outline-offset: 2px;
-}
-
-.legend-item.is-active {
-  border-color: var(--accent, #2563eb);
   background-color: color-mix(in srgb, var(--accent, #2563eb) 12%, transparent);
 }
 
