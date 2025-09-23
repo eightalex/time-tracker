@@ -355,6 +355,7 @@ function toggleLegend(taskId) {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  gap: 1px;
   overflow: hidden;
   transition: height 0.2s ease;
 }
