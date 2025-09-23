@@ -14,8 +14,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
-import { buildTaskTotalsForRange } from '../helpers';
+import { computed, ref, watch } from 'vue';
+import { buildTaskTotalsForRange, toInputDate, firstDayOfMonth } from '../helpers';
 
 const props = defineProps({
   exportStartStr: String,
@@ -24,8 +24,26 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:exportStartStr','update:exportEndStr']);
 
+const defaultStart = toInputDate(firstDayOfMonth(new Date()));
+const defaultEnd = toInputDate(new Date());
 const modelExportStartStr = computed({ get:()=>props.exportStartStr, set:v=>emit('update:exportStartStr', v) });
 const modelExportEndStr = computed({ get:()=>props.exportEndStr, set:v=>emit('update:exportEndStr', v) });
+
+watch(
+  () => props.exportStartStr,
+  (value) => {
+    if (!value) emit('update:exportStartStr', defaultStart);
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.exportEndStr,
+  (value) => {
+    if (!value) emit('update:exportEndStr', defaultEnd);
+  },
+  { immediate: true }
+);
 
 const hiddenTA = ref(null);
 
@@ -64,4 +82,3 @@ function copyTSV(){
 .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;}
 .toolbar .field{display:flex;gap:8px;align-items:center}
 </style>
-

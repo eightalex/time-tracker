@@ -85,8 +85,8 @@ const state = reactive({
   tasks: [],
   tab: 'all',
   section: 'tasks',
-  exportStartStr: toInputDate(firstDayOfMonth(prevMonth(new Date()))),
-  exportEndStr: toInputDate(lastDayOfMonth(prevMonth(new Date()))),
+  exportStartStr: toInputDate(firstDayOfMonth(new Date())),
+  exportEndStr: toInputDate(new Date()),
   entriesDateStr: toInputDate(new Date()),
   tick: 0,
 });

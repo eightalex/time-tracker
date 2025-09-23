@@ -11,8 +11,18 @@ export function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); retu
 export function firstDayOfMonth(d){ const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x; }
 export function lastDayOfMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()+1,0); x.setHours(23,59,59,999); return x; }
 export function prevMonth(d){ const x=new Date(d); x.setMonth(x.getMonth()-1, 1); return x; }
-export function toInputDate(d){ return d.toISOString().slice(0,10); }
-export function toInputMonth(d){ return d.toISOString().slice(0,7); }
+export function toInputDate(d){
+  const x = new Date(d);
+  if(Number.isNaN(x.getTime())) return '';
+  const shifted = new Date(x.getTime() - x.getTimezoneOffset()*60000);
+  return shifted.toISOString().slice(0,10);
+}
+export function toInputMonth(d){
+  const x = new Date(d);
+  if(Number.isNaN(x.getTime())) return '';
+  const shifted = new Date(x.getTime() - x.getTimezoneOffset()*60000);
+  return shifted.toISOString().slice(0,7);
+}
 export function toISODate(d){ return d.toISOString().slice(0,10); }
 export function monthLabel(d){ return d.toLocaleDateString('uk-UA', { month:'long', year:'numeric' }); }
 
