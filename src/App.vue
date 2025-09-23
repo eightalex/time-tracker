@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { reactive, computed, watch, onMounted, toRefs } from 'vue';
+import { reactive, computed, watch, onMounted, toRefs, ref } from 'vue';
 import HeaderBar from './components/HeaderBar.vue';
 import Metrics from './components/Metrics.vue';
 import Export from './components/Export.vue';
@@ -91,11 +91,26 @@ const state = reactive({
   tick: 0,
 });
 
-const today = new Date();
+const today = ref(new Date());
 const knownProjects = computed(() => uniq(state.tasks.map((t) => t.project).filter(Boolean)).sort());
 const knownTypes = computed(() => uniq(state.tasks.map((t) => t.type).filter(Boolean)).sort());
 const filteredTasks = computed(() => state.tasks.filter((t) => (state.tab === 'archived' ? t.archived : !t.archived)));
 const runningCount = computed(() => state.tasks.filter((t) => !!t.running).length);
+watch(
+  () => state.tick,
+  () => {
+    const now = new Date();
+    const last = today.value;
+    if (
+      now.getFullYear() !== last.getFullYear() ||
+      now.getMonth() !== last.getMonth() ||
+      now.getDate() !== last.getDate()
+    ) {
+      today.value = now;
+    }
+  },
+  { immediate: true }
+);
 const entriesForSelectedDate = computed(() => {
   const dateStr = state.entriesDateStr;
   if (!dateStr) return [];
