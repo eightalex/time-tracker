@@ -310,13 +310,13 @@ function makeColor(seed, fallbackTitle) {
 }
 
 .chart-grid__value {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--sub);
 }
 
 .chart-grid__bar {
-  width: 100%;
-  border-radius: 6px 6px 0 0;
+  width: 15px;
+  border-radius: 5px 5px 0 0;
   background: var(--segment-bg);
   display: flex;
   flex-direction: column;
@@ -342,7 +342,7 @@ function makeColor(seed, fallbackTitle) {
 .monthly-chart__legend {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .legend-item {
