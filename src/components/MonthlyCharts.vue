@@ -31,12 +31,14 @@
             <div
               v-for="segment in day.segments"
               :key="segment.id"
-              class="chart-grid__segment"
+              :class="['chart-grid__segment', segmentClasses(segment.id)]"
               :style="{
                 backgroundColor: segment.color,
                 flexGrow: segment.ms,
               }"
               :title="segment.tooltip"
+              @mouseenter="setHoveredTask(segment.id)"
+              @mouseleave="clearHoveredTask(segment.id)"
             ></div>
           </div>
           <div class="chart-grid__label">{{ day.day }}</div>
@@ -52,12 +54,14 @@
         v-for="item in legend"
         :key="item.id"
         class="legend-item"
-        :class="{ 'is-active': activeTaskId === item.id }"
+        :class="legendClasses(item.id)"
         role="button"
         tabindex="0"
         @click="toggleLegend(item.id)"
         @keydown.enter.prevent="toggleLegend(item.id)"
         @keydown.space.prevent="toggleLegend(item.id)"
+        @mouseenter="setHoveredTask(item.id)"
+        @mouseleave="clearHoveredTask(item.id)"
       >
         <span class="legend-item__swatch" :style="{ backgroundColor: item.color }"></span>
         <span class="legend-item__title">{{ item.title }}</span>
@@ -88,6 +92,7 @@ const props = defineProps({
 
 const selectedMonth = ref('');
 const activeTaskId = ref(null);
+const hoveredTaskId = ref(null);
 
 watch(
   () => props.today,
@@ -306,6 +311,33 @@ function makeColor(seed, fallbackTitle) {
 
 function toggleLegend(taskId) {
   activeTaskId.value = activeTaskId.value === taskId ? null : taskId;
+  hoveredTaskId.value = taskId;
+}
+
+function setHoveredTask(taskId) {
+  hoveredTaskId.value = taskId;
+}
+
+function clearHoveredTask(taskId) {
+  if (hoveredTaskId.value === taskId) {
+    hoveredTaskId.value = null;
+  }
+}
+
+function segmentClasses(taskId) {
+  return {
+    'is-highlighted': hoveredTaskId.value === taskId,
+    'is-faded': hoveredTaskId.value && hoveredTaskId.value !== taskId,
+    'is-active': activeTaskId.value === taskId,
+  };
+}
+
+function legendClasses(taskId) {
+  return {
+    'is-active': activeTaskId.value === taskId,
+    'is-highlighted': hoveredTaskId.value === taskId,
+    'is-faded': hoveredTaskId.value && hoveredTaskId.value !== taskId,
+  };
 }
 </script>
 
@@ -369,6 +401,21 @@ function toggleLegend(taskId) {
 
 .chart-grid__segment {
   width: 100%;
+  transition: opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+}
+
+.chart-grid__segment.is-highlighted {
+  opacity: 1;
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.chart-grid__segment.is-faded {
+  opacity: 0.35;
+}
+
+.chart-grid__segment.is-active {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
 }
 
 .chart-grid__label {
@@ -396,7 +443,7 @@ function toggleLegend(taskId) {
   background: var(--surface);
   border: 1px solid var(--line);
   cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .legend-item__swatch {
@@ -421,12 +468,21 @@ function toggleLegend(taskId) {
 
 .legend-item.is-active {
   border-color: var(--accent, #2563eb);
-  background-color: rgba(37, 99, 235, 0.12);
+  background-color: color-mix(in srgb, var(--accent, #2563eb) 12%, transparent);
 }
 
 .legend-item:focus-visible {
   outline: 2px solid var(--accent, #2563eb);
   outline-offset: 2px;
+}
+
+.legend-item.is-highlighted {
+  border-color: var(--accent, #2563eb);
+  background-color: color-mix(in srgb, var(--accent, #2563eb) 18%, transparent);
+}
+
+.legend-item.is-faded {
+  opacity: 0.45;
 }
 
 .legend-item.is-active {
