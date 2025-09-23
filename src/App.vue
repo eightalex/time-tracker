@@ -7,6 +7,7 @@
       :tasks="tasks"
       :running-count="runningCount"
       :tick="tick"
+      @toggle-active-task="onToggleActiveTask"
     />
 
     <Export
@@ -224,6 +225,13 @@ function remove(task){ if(!confirm('Видалити задачу? Дію нем
 function start(task){ state.tasks.forEach(t=>{ if(isRunning(t)) stop(t); }); task.running = { start: Date.now() }; }
 function stop(task){ if(!isRunning(task)) return; const start = new Date(task.running.start); const end = new Date(); const dur = Math.max(0, end - start); task.logs.push({ id: cryptoRandomId(), start: start.getTime(), end: end.getTime(), ms: dur }); task.running = null; save(); }
 function stopIfRunning(task){ if(isRunning(task)) stop(task); }
+
+function onToggleActiveTask(payload){
+  if(!payload || !payload.taskId) return;
+  const task = state.tasks.find((t)=> t.id === payload.taskId);
+  if(!task) return;
+  if(isRunning(task)) stop(task); else start(task);
+}
 
 function totalForDate(dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, d0, d1); } return sum + runningOverlapInRange(d0, d1); }
 function totalForMonth(monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, m0, m1); } return sum + runningOverlapInRange(m0, m1); }
