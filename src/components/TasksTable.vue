@@ -278,6 +278,10 @@ const todayDate = computed(() => new Date());
         & + .task {
             border-radius: var(--radius) var(--radius) 0 0;
         }
+
+        & + .task:last-child {
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
     }
 
     &:first-child {
