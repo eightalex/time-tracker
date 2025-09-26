@@ -40,6 +40,7 @@
               :title="segment.tooltip"
               @mouseenter="setHoveredTask(segment.id)"
               @mouseleave="clearHoveredTask(segment.id)"
+              @click="toggleLegend(segment.id)"
             ></div>
           </div>
           <div class="chart-grid__label">{{ day.day }}</div>
@@ -414,6 +415,7 @@ function legendClasses(taskId) {
 .chart-grid__segment {
   width: 100%;
   transition: opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+  cursor: pointer;
 }
 
 .chart-grid__segment.is-highlighted {
