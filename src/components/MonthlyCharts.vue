@@ -18,12 +18,13 @@
         <div
           v-for="day in days"
           :key="day.date"
-          class="chart-grid__item"
+          :class="['chart-grid__item', { 'chart-grid__item--weekend': day.isWeekend }]"
         >
           <div class="chart-grid__value mono" v-if="day.totalMs">
             {{ formatMs(day.totalMs) }}
           </div>
           <div
+            v-if="day.totalMs"
             class="chart-grid__bar"
             :style="{ height: barHeight(day.totalMs) + 'px' }"
             :aria-label="barAria(day)"
@@ -277,11 +278,13 @@ function buildMonthlyDays(tasks, monthStartDate) {
           tooltip: `${item.title}: ${formatHours(item.ms)}`,
         };
       });
+    const dayOfWeek = iter.getDay();
     results.push({
       date: entry.date,
       day: entry.day,
       totalMs: entry.totalMs,
       segments,
+      isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     });
     iter.setDate(iter.getDate() + 1);
   }
@@ -380,6 +383,15 @@ function legendClasses(taskId) {
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+.chart-grid__item--weekend .chart-grid__label {
+  margin-bottom: -3px;
+  padding: 3px 7px;
+  background-color: color-mix(in srgb, var(--accent, #ef4444) 6%, transparent);
+  border-radius: 6px;
+  color: var(--accent, #ef4444);
+  font-weight: 600;
 }
 
 .chart-grid__value {
