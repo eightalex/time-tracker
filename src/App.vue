@@ -51,7 +51,12 @@
 
       <TabsBar v-model:tab="tab" />
 
-      <TasksTable :filtered-tasks="filteredTasks" :tick="tick" @remove-task="onRemoveTask" />
+      <TasksTable
+        :filtered-tasks="filteredTasks"
+        :all-tasks="tasks"
+        :tick="tick"
+        @remove-task="onRemoveTask"
+      />
     </template>
 
     <TimeEntries

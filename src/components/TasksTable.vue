@@ -143,6 +143,7 @@ import { isRunning, formatMsS, totalForTaskOnDate, totalForTaskOverall, cryptoRa
 
 const props = defineProps({
     filteredTasks: { type: Array, required: true },
+    allTasks: { type: Array },
     tick: { type: Number, default: 0 }
 });
 
@@ -192,12 +193,21 @@ function emitRemove(task) {
     }
 }
 
+function tasksPool() {
+    return Array.isArray(props.allTasks) ? props.allTasks : props.filteredTasks;
+}
+
 function start(task) {
-    props.filteredTasks.forEach((t) => {
-        if (isRunning(t)) {
+    // Ensure only one timer runs globally.
+    tasksPool().forEach((t) => {
+        if (t !== task && isRunning(t)) {
             stop(t);
         }
     });
+
+    if (isRunning(task)) {
+        return;
+    }
 
     task.running = { start: Date.now() };
 }
