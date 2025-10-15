@@ -7,6 +7,7 @@
             <TransitionGroup
                 v-else
                 name="task-move"
+                :css="!props.disableAnimation"
                 tag="div"
             >
                 <div
@@ -144,6 +145,7 @@ import { isRunning, formatMsS, totalForTaskOnDate, totalForTaskOverall, cryptoRa
 const props = defineProps({
     filteredTasks: { type: Array, required: true },
     allTasks: { type: Array },
+    disableAnimation: { type: Boolean, default: false },
     tick: { type: Number, default: 0 }
 });
 

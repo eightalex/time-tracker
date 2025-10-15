@@ -54,6 +54,7 @@
       <TasksTable
         :filtered-tasks="filteredTasks"
         :all-tasks="tasks"
+        :disable-animation="suppressTaskAnimation"
         :tick="tick"
         @remove-task="onRemoveTask"
       />
@@ -79,7 +80,7 @@
 </template>
 
 <script setup>
-import { reactive, computed, watch, onMounted, toRefs, ref } from 'vue';
+import { reactive, computed, watch, onMounted, toRefs, ref, nextTick } from 'vue';
 import HeaderBar from './components/HeaderBar.vue';
 import Metrics from './components/Metrics.vue';
 import Export from './components/Export.vue';
@@ -117,6 +118,7 @@ const state = reactive({
 });
 
 const today = ref(new Date());
+const suppressTaskAnimation = ref(false);
 const knownProjects = computed(() => uniq(state.tasks.map((t) => t.project).filter(Boolean)).sort());
 const knownTypes = computed(() => uniq(state.tasks.map((t) => t.type).filter(Boolean)).sort());
 const filteredTasks = computed(() => {
@@ -131,6 +133,15 @@ const filteredTasks = computed(() => {
   });
 });
 const runningCount = computed(() => state.tasks.filter((t) => !!t.running).length);
+
+watch(
+  () => state.tab,
+  async () => {
+    suppressTaskAnimation.value = true;
+    await nextTick();
+    suppressTaskAnimation.value = false;
+  }
+);
 watch(
   () => state.tick,
   () => {
