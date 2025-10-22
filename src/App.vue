@@ -329,6 +329,33 @@ const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, tick 
 
 // ---- Browser title: show running timer HH:MM ----
 const defaultTitle = document.title;
+
+const defaultFaviconHref = '/logo.svg';
+const runningFaviconHref = '/logo-running.svg';
+let currentFaviconHref = null;
+function updateFavicon(isRunning){
+  if (typeof document === 'undefined') return;
+  const nextHref = isRunning ? runningFaviconHref : defaultFaviconHref;
+  if (currentFaviconHref === nextHref) return;
+  const links = Array.from(document.querySelectorAll('link[rel*="icon"]'));
+  if (links.length === 0){
+    const link = document.createElement('link');
+    link.setAttribute('rel', 'icon');
+    link.setAttribute('href', nextHref);
+    document.head.appendChild(link);
+  }else{
+    for (const link of links){
+      if (link.getAttribute('href') !== nextHref){
+        link.setAttribute('href', nextHref);
+      }
+    }
+  }
+  currentFaviconHref = nextHref;
+}
+watch(runningCount, (count) => {
+  updateFavicon(count > 0);
+}, { immediate: true });
+
 const runningTask = computed(()=> state.tasks.find(t=> !!t.running) || null);
 function formatHm(ms){ ms = Math.max(0, ms|0); const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 watch([runningTask, tick], ()=>{
