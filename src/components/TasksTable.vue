@@ -47,56 +47,56 @@
                         </div>
                         <div class="controls">
                             <button
-                                class="btn green"
+                                class="btn panel green"
                                 v-if="!isRunning(task) && !task._edit"
                                 @click="start(task)"
                                 title="Старт таймера"
                             >▶︎</button>
                             <button
-                                class="btn grey"
+                                class="btn panel grey"
                                 v-else-if="isRunning(task)"
                                 @click="stop(task)"
                                 title="Зупинити таймер"
                             >⏸</button>
                             <button
-                                class="btn"
+                                class="btn panel"
                                 v-if="!task._edit"
                                 @click="openEdit(task)"
                             >Редагувати</button>
                             <button
-                                class="btn"
+                                class="btn panel"
                                 v-else
                                 @click="saveEdit(task)"
                             >Зберегти</button>
                             <button
-                                class="btn ghost"
+                                class="btn panel ghost"
                                 v-if="task._edit"
                                 @click="cancelEdit(task)"
                             >Скасувати</button>
                             <button
-                                class="btn"
+                                class="btn panel"
                                 v-if="!task.archived && !task._edit"
                                 @click="archive(task)"
                             >Архівувати</button>
                             <button
-                                class="btn"
+                                class="btn panel"
                                 v-if="task.archived && !task._edit"
                                 @click="unarchive(task)"
                             >Повернути</button>
                             <button
-                                class="btn"
+                                class="btn panel"
                                 v-if="!task.archived && !task._edit && !task.persistent"
                                 @click="makePersistent(task)"
                                 title="Додати до постійних"
                             >Постійна</button>
                             <button
-                                class="btn"
+                                class="btn panel"
                                 v-if="!task.archived && !task._edit && task.persistent"
                                 @click="makeRegular(task)"
                                 title="Прибрати з постійних"
                             >Звичайна</button>
                             <button
-                                class="btn red"
+                                class="btn panel red"
                                 v-if="!task._edit"
                                 @click="emitRemove(task)"
                             >Видалити</button>
@@ -305,15 +305,35 @@ const todayDate = computed(() => new Date());
         border-bottom: 1px solid var(--line);
     }
 
+    .head {
+        /* border-bottom: 1px solid var(--line); */
+    }
+
     .title {
         display: flex;
         gap: 8px;
         width: 100%;
         font-weight: 600;
 
+        a {
+            padding: 10px;
+            border-radius: 10px;
+            text-decoration: none;
+
+            &:hover {
+                background-color: var(--muted);
+            }
+        }
+
         input {
             flex: 1;
         }
+    }
+
+    .controls {
+        display: flex;
+        justify-content:flex-end;
+        margin-left:auto;
     }
 }
 
