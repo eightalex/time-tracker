@@ -16,7 +16,7 @@
                     class="task"
                     :class="{ 'is-running': isRunning(task) }"
                 >
-                    <div class="head row">
+                    <div class="head">
                         <div class="title">
                             <template v-if="!task._edit">
                                 <a
@@ -51,55 +51,91 @@
                                 v-if="!isRunning(task) && !task._edit"
                                 @click="start(task)"
                                 title="Старт таймера"
-                            >▶︎</button>
+                                aria-label="Старт таймера"
+                            >
+                                <Icon name="play" />
+                            </button>
                             <button
                                 class="btn panel grey"
                                 v-else-if="isRunning(task)"
                                 @click="stop(task)"
                                 title="Зупинити таймер"
-                            >⏸</button>
+                                aria-label="Зупинити таймер"
+                            >
+                                <Icon name="pause" />
+                            </button>
                             <button
                                 class="btn panel"
                                 v-if="!task._edit"
                                 @click="openEdit(task)"
-                            >Редагувати</button>
+                                title="Редагувати"
+                                aria-label="Редагувати"
+                            >
+                                <Icon name="edit" />
+                            </button>
                             <button
                                 class="btn panel"
                                 v-else
                                 @click="saveEdit(task)"
-                            >Зберегти</button>
+                                title="Зберегти"
+                                aria-label="Зберегти"
+                            >
+                                <Icon name="save" />
+                            </button>
                             <button
                                 class="btn panel ghost"
                                 v-if="task._edit"
                                 @click="cancelEdit(task)"
-                            >Скасувати</button>
+                                title="Скасувати"
+                                aria-label="Скасувати"
+                            >
+                                <Icon name="cancel" />
+                            </button>
                             <button
                                 class="btn panel"
                                 v-if="!task.archived && !task._edit"
                                 @click="archive(task)"
-                            >Архівувати</button>
+                                title="Архівувати"
+                                aria-label="Архівувати"
+                            >
+                                <Icon name="archive" />
+                            </button>
                             <button
                                 class="btn panel"
                                 v-if="task.archived && !task._edit"
                                 @click="unarchive(task)"
-                            >Повернути</button>
+                                title="Повернути"
+                                aria-label="Повернути"
+                            >
+                                <Icon name="unarchive" />
+                            </button>
                             <button
                                 class="btn panel"
                                 v-if="!task.archived && !task._edit && !task.persistent"
                                 @click="makePersistent(task)"
-                                title="Додати до постійних"
-                            >Постійна</button>
+                                title="Додати до повторюваних"
+                                aria-label="Додати до повторюваних"
+                            >
+                                <Icon name="repeat" />
+                            </button>
                             <button
                                 class="btn panel"
                                 v-if="!task.archived && !task._edit && task.persistent"
                                 @click="makeRegular(task)"
-                                title="Прибрати з постійних"
-                            >Звичайна</button>
+                                title="Прибрати з повторюваних"
+                                aria-label="Прибрати з повторюваних"
+                            >
+                                <Icon name="clock" />
+                            </button>
                             <button
                                 class="btn panel red"
                                 v-if="!task._edit"
                                 @click="emitRemove(task)"
-                            >Видалити</button>
+                                title="Видалити"
+                                aria-label="Видалити"
+                            >
+                                <Icon name="trash" />
+                            </button>
                         </div>
                     </div>
                     <div class="thead grid">
@@ -140,6 +176,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import Icon from './Icon.vue';
 import { isRunning, formatMsS, totalForTaskOnDate, totalForTaskOverall, cryptoRandomId } from '../helpers';
 
 const props = defineProps({
@@ -257,7 +294,7 @@ const todayDate = computed(() => new Date());
 
 <style scoped lang="postcss">
 .chips {
-    display: flex;
+    display: none;
     gap: 8px;
     flex-wrap: wrap;
 
@@ -278,15 +315,14 @@ const todayDate = computed(() => new Date());
 
 .task {
     background: var(--surface);
-    border-left: 1px solid var(--line);
-    border-top: 1px solid var(--line);
-    border-right: 1px solid var(--line);
+    border-radius: var(--radius) !important;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
+
+    &:not(:last-child) {
+        margin-bottom: 16px;
+    }
 
     &.is-running {
-        margin-bottom: 16px;
-        border-radius: var(--radius) !important;
-        border-bottom: 1px solid var(--line);
-
         & + .task {
             border-radius: var(--radius) var(--radius) 0 0;
         }
@@ -296,17 +332,10 @@ const todayDate = computed(() => new Date());
         }
     }
 
-    &:first-child {
-        border-radius: var(--radius) var(--radius) 0 0;
-    }
-
-    &:last-child {
-        border-radius: 0 0 var(--radius) var(--radius);
-        border-bottom: 1px solid var(--line);
-    }
-
     .head {
-        /* border-bottom: 1px solid var(--line); */
+        display: flex;
+        align-items: center;
+        padding: 10px;
     }
 
     .title {
@@ -315,14 +344,15 @@ const todayDate = computed(() => new Date());
         width: 100%;
         font-weight: 600;
 
-        a {
+        a,
+        span {
             padding: 10px;
             border-radius: 10px;
             text-decoration: none;
+        }
 
-            &:hover {
-                background-color: var(--muted);
-            }
+        a:hover {
+            background-color: var(--muted);
         }
 
         input {
@@ -332,8 +362,9 @@ const todayDate = computed(() => new Date());
 
     .controls {
         display: flex;
-        justify-content:flex-end;
-        margin-left:auto;
+        justify-content: flex-end;
+        flex-shrink: 0;
+        margin-left: auto;
     }
 }
 
