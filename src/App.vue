@@ -4,6 +4,7 @@
       :has-tasks="tasks.length > 0"
       @create-seed="createSeed"
       @clear-all="clearAll"
+      @export-data="exportData"
     />
 
     <Metrics
@@ -105,8 +106,8 @@ import {
   midpointWithin,
   isRunning,
 } from './helpers';
+import { saveTasksToDb, loadTasksFromDb, clearTasksInDb } from './storage/tasksStore';
 
-const STORAGE_KEY = 'time-tracker.v1';
 const state = reactive({
   tasks: [],
   tab: 'all',
@@ -315,10 +316,64 @@ function onAddTask(payload){
   state.tasks.unshift(task); save();
 }
 function onRemoveTask(id){ state.tasks = state.tasks.filter(t=> t.id !== id); save(); }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({tasks: state.tasks})); }
-function load(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return; const data = JSON.parse(raw); if(Array.isArray(data.tasks)) state.tasks = data.tasks; }catch(e){ console.warn('Load failed', e); } }
+async function save(){
+  try{
+    await saveTasksToDb(state.tasks);
+  }catch(e){
+    console.warn('Save failed', e);
+  }
+}
+async function load(){
+  try{
+    const tasks = await loadTasksFromDb();
+    if(Array.isArray(tasks)) state.tasks = tasks;
+  }catch(e){
+    console.warn('Load failed', e);
+  }
+}
 function createSeed(){ if(!confirm('Додати кілька демо-задач?')) return; const now = Date.now(); const p = (title, project, type) => ({ id: cryptoRandomId(), title, link:'', project, type, archived:false, persistent:false, logs:[], running:null, createdAt: now }); const a = p('TB: виправити помилку ACF','Traffic Bureau','dev'); const b = p('Planka: валідація форм','Internal','dev'); const c = p('Рефакторинг таблиць','Mezha','frontend'); const lastM = prevMonth(new Date()); const lastMStart = firstDayOfMonth(lastM).getTime(); const day1 = lastMStart + 3*86400000 + 9*3600000; const day2 = lastMStart + 10*86400000 + 14*3600000; a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000}); b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000}); const today = new Date(); today.setHours(10,0,0,0); const todayStart = today.getTime(); c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000}); state.tasks.unshift(a,b,c); save(); }
-function clearAll(){ if(confirm('Очистити всі локальні дані?')) { localStorage.removeItem(STORAGE_KEY); state.tasks=[]; } }
+async function clearAll(){
+  if(!confirm('Очистити всі локальні дані?')) return;
+  try{
+    await clearTasksInDb();
+  }catch(e){
+    console.warn('Clear failed', e);
+    alert('Не вдалося очистити локальні дані. Перевірте дозволи браузера.');
+    return;
+  }
+  state.tasks=[];
+}
+function exportData(){
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  try{
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      tasks: cloneTasks(state.tasks),
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `time-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    console.warn('Export failed', e);
+    alert('Не вдалося створити файл експорту. Спробуйте ще раз.');
+  }
+}
+function cloneTasks(tasks){
+  try{
+    return JSON.parse(JSON.stringify(Array.isArray(tasks) ? tasks : []));
+  }catch(e){
+    console.warn('Clone failed', e);
+    return [];
+  }
+}
 
 setInterval(()=> state.tick++, 1000);
 watch(()=>state.tasks, save, {deep:true});

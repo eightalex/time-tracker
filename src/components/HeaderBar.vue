@@ -12,6 +12,7 @@
       >
         + Швидко додати демо
       </button>
+      <button class="btn ghost" @click="$emit('export-data')" title="Експортувати локальний бекап">Експорт</button>
       <button class="btn ghost" @click="$emit('clear-all')" title="Очистити локальні дані">Очистити</button>
       <ThemeSwitcher />
     </div>
@@ -20,7 +21,7 @@
 
 <script setup>
 import ThemeSwitcher from './ThemeSwitcher.vue';
-const emit = defineEmits(['create-seed','clear-all']);
+const emit = defineEmits(['create-seed','clear-all','export-data']);
 const props = defineProps({
   hasTasks: { type: Boolean, default: false },
 });
