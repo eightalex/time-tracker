@@ -134,7 +134,7 @@ function onToggleActive() {
 
 <style scoped>
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px;}
-.metric{padding:16px;border-radius:14px;background:var(--muted);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;gap:8px}
+.metric{padding:16px;border-radius:14px;background:var(--input-bg);display:flex;flex-direction:column;justify-content:center;gap:8px}
 .metric .k{font-size:20px;font-weight:700}
 .metric .l{font-size:12px;color:var(--sub)}
 .metric--active{flex-direction:row;align-items:center;gap:16px}

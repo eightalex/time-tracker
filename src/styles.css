@@ -16,14 +16,14 @@
   --warn: #f59e0b;
 
   /* Controls */
-  --input-bg: #0f1115;
+  --input-bg: #16191f;
   --input-bg-focus: #0f1218;
   --scheme: dark;
   --btn-bg1: #181a20;
   --btn-bg2: #14161b;
   --btn-border: var(--line);
   --segment-bg: #111216;
-  --segment-active: #12141a;
+  --segment-active: #282c37;
 
   /* Layout */
   --radius: 16px;
@@ -43,14 +43,14 @@
     --line: #d9dee7;
     --text: #0b1020;
     --sub: #556070;
-    --input-bg: #ffffff;
+    --input-bg: #f6f6f6;
     --input-bg-focus: #f6f8fc;
     --scheme: light;
     --btn-bg1: #f6f7fb;
     --btn-bg2: #eef1f7;
     --btn-border: #e0e6f0;
     --segment-bg: #fff;
-    --segment-active: #ffffff;
+    --segment-active: #eee;
   }
 }
 
@@ -70,7 +70,7 @@
   --btn-bg2: #eef1f7;
   --btn-border: #e0e6f0;
   --segment-bg: #fff;
-  --segment-active: #ffffff;
+  --segment-active: #eee;
 }
 
 :root[data-theme="dark"] {
@@ -81,14 +81,14 @@
   --line: #23262d;
   --text: #e9edf1;
   --sub: #9aa3ad;
-  --input-bg: #0f1115;
+  --input-bg: #16191f;
   --input-bg-focus: #0f1218;
   --scheme: dark;
   --btn-bg1: #181a20;
   --btn-bg2: #14161b;
   --btn-border: var(--line);
   --segment-bg: #111216;
-  --segment-active: #12141a;
+  --segment-active: #282c37;
 }
 
 * {
@@ -121,7 +121,7 @@ h1 {
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--line);
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
   border-radius: var(--radius);
 }
 
@@ -149,7 +149,7 @@ input[type="datetime-local"],
 select,
 textarea {
   background: var(--input-bg);
-  border: 1px solid var(--line);
+  border: none;
   border-radius: 12px;
   color: var(--text);
   padding: 12px 12px;
@@ -251,8 +251,7 @@ textarea:focus {
 
 .hr {
   height: 1px;
-  background: var(--line);
-  margin: 14px 0;
+  margin: 16px 0;
 }
 
 .grid {
@@ -263,13 +262,13 @@ textarea:focus {
 }
 
 .thead {
-  padding: 12px 12px 0;
+  padding: 12px 20px 0;
   color: var(--sub);
   font-size: 12px;
 }
 
 .tbody .row {
-  padding: 12px;
+  padding: 12px 20px;
 }
 
 .muted {
@@ -346,17 +345,17 @@ textarea:focus {
 
 .section-switcher__btn {
   flex: 1;
-  border-radius: 999px;
+  border-radius: 12px;
   border: 1px solid transparent;
   background: var(--segment-bg);
   color: var(--sub);
   padding: 10px 16px;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
   transition: background .2s ease, color .2s ease, border-color .2s ease;
 }
 
-.section-switcher__btn:hover {
+.section-switcher__btn:not(.active):hover {
   filter: brightness(1.05);
 }
 
@@ -367,6 +366,5 @@ textarea:focus {
 
 .section-switcher__btn.active {
   background: var(--segment-active);
-  border-color: var(--line);
   color: var(--text);
 }

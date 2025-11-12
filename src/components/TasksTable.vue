@@ -314,6 +314,7 @@ const todayDate = computed(() => new Date());
 }
 
 .task {
+    padding-bottom: 6px;
     background: var(--surface);
     border-radius: var(--radius) !important;
     box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
