@@ -431,7 +431,6 @@ const todayDate = computed(() => new Date());
 
     .task-meta .meta-label {
         padding: 0 0 0 10px;
-        letter-spacing: 0.05em;
         font-size: 11px;
     }
 
