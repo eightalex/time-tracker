@@ -16,15 +16,16 @@ import {
     PhArchiveBox,
     PhBoxArrowUp,
     PhClock,
+    PhDotsThreeVertical,
     PhFloppyDisk,
     PhPause,
+    PhPencilSimple,
     PhPlay,
     PhQuestion,
+    PhRepeat,
     PhStar,
     PhTrash,
     PhXCircle,
-    PhPencilSimple,
-    PhRepeat,
 } from '@phosphor-icons/vue';
 
 const ICONS = {
@@ -40,6 +41,7 @@ const ICONS = {
     trash: PhTrash,
     question: PhQuestion,
     repeat: PhRepeat,
+    more: PhDotsThreeVertical,
 };
 
 const props = defineProps({

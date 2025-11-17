@@ -47,95 +47,50 @@
                         </div>
                         <div class="controls">
                             <button
-                                class="btn panel green"
+                                class="btn panel green primary-action"
                                 v-if="!isRunning(task) && !task._edit"
                                 @click="start(task)"
                                 title="Старт таймера"
                                 aria-label="Старт таймера"
                             >
-                                <Icon name="play" />
+                                <Icon name="play" size="26" />
                             </button>
                             <button
-                                class="btn panel grey"
+                                class="btn panel grey primary-action"
                                 v-else-if="isRunning(task)"
                                 @click="stop(task)"
                                 title="Зупинити таймер"
                                 aria-label="Зупинити таймер"
                             >
-                                <Icon name="pause" />
+                                <Icon name="pause" size="26" />
                             </button>
-                            <button
-                                class="btn panel"
-                                v-if="!task._edit"
-                                @click="openEdit(task)"
-                                title="Редагувати"
-                                aria-label="Редагувати"
-                            >
-                                <Icon name="edit" />
-                            </button>
-                            <button
-                                class="btn panel"
-                                v-else
-                                @click="saveEdit(task)"
-                                title="Зберегти"
-                                aria-label="Зберегти"
-                            >
-                                <Icon name="save" />
-                            </button>
-                            <button
-                                class="btn panel ghost"
-                                v-if="task._edit"
-                                @click="cancelEdit(task)"
-                                title="Скасувати"
-                                aria-label="Скасувати"
-                            >
-                                <Icon name="cancel" />
-                            </button>
-                            <button
-                                class="btn panel"
-                                v-if="!task.archived && !task._edit"
-                                @click="archive(task)"
-                                title="Архівувати"
-                                aria-label="Архівувати"
-                            >
-                                <Icon name="archive" />
-                            </button>
-                            <button
-                                class="btn panel"
-                                v-if="task.archived && !task._edit"
-                                @click="unarchive(task)"
-                                title="Повернути"
-                                aria-label="Повернути"
-                            >
-                                <Icon name="unarchive" />
-                            </button>
-                            <button
-                                class="btn panel"
-                                v-if="!task.archived && !task._edit && !task.persistent"
-                                @click="makePersistent(task)"
-                                title="Додати до повторюваних"
-                                aria-label="Додати до повторюваних"
-                            >
-                                <Icon name="repeat" />
-                            </button>
-                            <button
-                                class="btn panel"
-                                v-if="!task.archived && !task._edit && task.persistent"
-                                @click="makeRegular(task)"
-                                title="Прибрати з повторюваних"
-                                aria-label="Прибрати з повторюваних"
-                            >
-                                <Icon name="clock" />
-                            </button>
-                            <button
-                                class="btn panel red"
-                                v-if="!task._edit"
-                                @click="emitRemove(task)"
-                                title="Видалити"
-                                aria-label="Видалити"
-                            >
-                                <Icon name="trash" />
-                            </button>
+                            <div class="controls-menu">
+                                <button
+                                    class="btn panel ghost more-btn"
+                                    @click.stop="toggleMenu(task.id)"
+                                    :aria-expanded="openMenuFor === task.id"
+                                    aria-haspopup="true"
+                                    title="Інші дії"
+                                    aria-label="Інші дії"
+                                >
+                                    <Icon name="more" />
+                                </button>
+                                <div
+                                    v-if="openMenuFor === task.id"
+                                    class="controls-menu__dropdown"
+                                >
+                                    <button
+                                        v-for="item in menuItemsForTask(task)"
+                                        :key="item.label"
+                                        class="controls-menu__item"
+                                        type="button"
+                                        @click="handleMenuAction(item.action)"
+                                    >
+                                        <Icon :name="item.icon" size="18" />
+                                        <span>{{ item.label }}</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="thead grid">
@@ -175,7 +130,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import Icon from './Icon.vue';
 import { isRunning, formatMsS, totalForTaskOnDate, totalForTaskOverall, cryptoRandomId } from '../helpers';
 
@@ -187,6 +142,88 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['remove-task']);
+
+const openMenuFor = ref(null);
+
+function toggleMenu(taskId) {
+    openMenuFor.value = openMenuFor.value === taskId ? null : taskId;
+}
+
+function closeMenu() {
+    openMenuFor.value = null;
+}
+
+function handleMenuAction(action) {
+    if (typeof action === 'function') {
+        action();
+    }
+    closeMenu();
+}
+
+function menuItemsForTask(task) {
+    const items = [];
+
+    if (task._edit) {
+        items.push({
+            icon: 'save',
+            label: 'Зберегти',
+            action: () => saveEdit(task)
+        });
+        items.push({
+            icon: 'cancel',
+            label: 'Скасувати',
+            action: () => cancelEdit(task)
+        });
+    } else {
+        items.push({
+            icon: 'edit',
+            label: 'Редагувати',
+            action: () => openEdit(task)
+        });
+    }
+
+    if (!task.archived && !task._edit) {
+        items.push({
+            icon: 'archive',
+            label: 'Архівувати',
+            action: () => archive(task)
+        });
+    }
+
+    if (task.archived && !task._edit) {
+        items.push({
+            icon: 'unarchive',
+            label: 'Повернути',
+            action: () => unarchive(task)
+        });
+    }
+
+    if (!task.archived && !task._edit && !task.persistent) {
+        items.push({
+            icon: 'repeat',
+            label: 'Додати до повторюваних',
+            action: () => makePersistent(task)
+        });
+    }
+
+    if (!task.archived && !task._edit && task.persistent) {
+        items.push({
+            icon: 'clock',
+            label: 'Прибрати з повторюваних',
+            action: () => makeRegular(task)
+        });
+    }
+
+    if (!task._edit) {
+        items.push({
+            icon: 'trash',
+            label: 'Видалити',
+            action: () => emitRemove(task)
+        });
+    }
+
+    return items;
+}
 
 function openEdit(task) {
     task._edit = true;
@@ -366,6 +403,72 @@ const todayDate = computed(() => new Date());
         justify-content: flex-end;
         flex-shrink: 0;
         margin-left: auto;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn.panel.primary-action {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+    }
+
+    .btn.panel.primary-action svg {
+        width: 70%;
+        height: 70%;
+    }
+
+    .btn.panel.primary-action.green svg {
+        padding-right: 1px;
+    }
+
+    .controls-menu {
+        position: relative;
+    }
+
+    .controls-menu .more-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-s);
+    }
+
+    .controls-menu__dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 8px);
+        background: var(--surface);
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        min-width: 220px;
+        padding: 8px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 10;
+    }
+
+    .controls-menu__item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        border: none;
+        background: transparent;
+        color: inherit;
+        padding: 8px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: left;
+    }
+
+    .controls-menu__item:hover {
+        background: var(--muted);
+    }
+
+    .controls-menu__item:active {
+        transform: translateY(1px);
     }
 }
 
