@@ -18,28 +18,58 @@
                 >
                     <div class="head">
                         <div class="title">
-                            <template v-if="!task._edit">
-                                <a
-                                    v-if="task.link"
-                                    :href="task.link"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >{{ task.title }}</a>
-                                <span v-else>{{ task.title }}</span>
-                            </template>
-                            <template v-else>
-                                <input
-                                    type="text"
-                                    v-model="task._draft.title"
-                                />
-                            </template>
-                            <template v-if="task._edit">
-                                <input
-                                    type="url"
-                                    v-model="task._draft.link"
-                                    placeholder="Посилання"
-                                />
-                            </template>
+                            <div class="title-main">
+                                <template v-if="!task._edit">
+                                    <a
+                                        v-if="task.link"
+                                        :href="task.link"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >{{ task.title }}</a>
+                                    <span v-else>{{ task.title }}</span>
+                                </template>
+                                <template v-else>
+                                    <input
+                                        type="text"
+                                        v-model="task._draft.title"
+                                    />
+                                </template>
+                                <template v-if="task._edit">
+                                    <input
+                                        type="url"
+                                        v-model="task._draft.link"
+                                        placeholder="Посилання"
+                                    />
+                                </template>
+                            </div>
+                            <div class="task-meta hide-sm">
+                                <div class="meta-item">
+                                    <span class="meta-label">Проєкт</span>
+                                    <template v-if="!task._edit">
+                                        <span class="meta-value">{{ task.project || '—' }}</span>
+                                    </template>
+                                    <template v-else>
+                                        <input
+                                            type="text"
+                                            v-model="task._draft.project"
+                                            list="projectsList"
+                                        />
+                                    </template>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Тип проєкту</span>
+                                    <template v-if="!task._edit">
+                                        <span class="meta-value">{{ task.type || '—' }}</span>
+                                    </template>
+                                    <template v-else>
+                                        <input
+                                            type="text"
+                                            v-model="task._draft.type"
+                                            list="typesList"
+                                        />
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                         <div class="chips">
                             <span class="chip">ID: {{ task.id.slice(-6) }}</span>
@@ -94,32 +124,10 @@
                         </div>
                     </div>
                     <div class="thead grid">
-                        <div>Проєкт</div>
-                        <div class="hide-sm">Тип проєкту</div>
                         <div class="nowrap">Сьогодні</div>
                         <div class="nowrap">За увесь час</div>
                     </div>
                     <div class="row grid">
-                        <div class="hide-sm">
-                            <template v-if="!task._edit">{{ task.project || '—' }}</template>
-                            <template v-else>
-                                <input
-                                    type="text"
-                                    v-model="task._draft.project"
-                                    list="projectsList"
-                                />
-                            </template>
-                        </div>
-                        <div class="hide-sm">
-                            <template v-if="!task._edit">{{ task.type || '—' }}</template>
-                            <template v-else>
-                                <input
-                                    type="text"
-                                    v-model="task._draft.type"
-                                    list="typesList"
-                                />
-                            </template>
-                        </div>
                         <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs)) }}</div>
                         <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs)) }}</div>
                     </div>
@@ -378,7 +386,8 @@ const todayDate = computed(() => new Date());
 
     .title {
         display: flex;
-        gap: 8px;
+        flex-direction: column;
+        gap: 0;
         width: 100%;
         font-weight: 600;
 
@@ -392,10 +401,51 @@ const todayDate = computed(() => new Date());
         a:hover {
             background-color: var(--muted);
         }
+    }
+
+    .title-main {
+        display: flex;
+        gap: 8px;
+        width: 100%;
 
         input {
             flex: 1;
         }
+    }
+
+    .task-meta {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        width: 100%;
+        font-size: 12px;
+        color: var(--sub);
+    }
+
+    .task-meta .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        opacity: 0.4;
+    }
+
+    .task-meta .meta-label {
+        padding: 0 0 0 10px;
+        letter-spacing: 0.05em;
+        font-size: 11px;
+    }
+
+    .task-meta .meta-value {
+        padding: 0;
+        color: var(--text);
+        font-weight: 500;
+        opacity: 0.85;
+    }
+
+    .task-meta input {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 8px;
     }
 
     .controls {
