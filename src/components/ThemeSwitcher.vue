@@ -83,7 +83,7 @@ onMounted(()=>{
 
 <style scoped>
 .theme-toggle{display:inline-flex;gap:2px;background:var(--muted);border:1px solid var(--line);border-radius:12px;padding:2px;align-items:center}
-.theme-toggle__btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--sub);padding:6px 8px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.theme-toggle__btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--sub);padding:6px 8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .theme-toggle__btn:hover{filter:brightness(1.08)}
 .theme-toggle__btn:focus-visible{outline:2px solid var(--accent-2);outline-offset:1px}
 .theme-toggle__btn.active{background:var(--surface);color:var(--text);border-color:var(--line)}
