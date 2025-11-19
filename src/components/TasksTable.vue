@@ -385,6 +385,7 @@ const todayDate = computed(() => new Date());
     .head {
         display: flex;
         align-items: center;
+        gap: 12px;
         padding: 10px;
     }
 
@@ -410,6 +411,7 @@ const todayDate = computed(() => new Date());
     .title-main {
         display: flex;
         gap: 8px;
+        margin-bottom: 2px;
         width: 100%;
 
         input {

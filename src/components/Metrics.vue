@@ -156,6 +156,6 @@ function onToggleActive() {
 }
 .metric-active__btn:disabled{opacity:0.45;cursor:not-allowed}
 .metric-active__info{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
-.metric-active__title{max-width:206px;font-weight:600;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.metric-active__title{max-width:145px;font-weight:600;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .metric-active__time{font-size:18px;font-weight:600;color:var(--text)}
 </style>

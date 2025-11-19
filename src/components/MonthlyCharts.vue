@@ -388,7 +388,7 @@ function legendClasses(taskId) {
 
 .chart-grid__item--weekend .chart-grid__label {
   margin-bottom: -3px;
-  padding: 3px 7px;
+  padding: 3px 5px;
   background-color: color-mix(in srgb, var(--accent, #ef4444) 6%, transparent);
   border-radius: 6px;
   color: var(--accent, #ef4444);
