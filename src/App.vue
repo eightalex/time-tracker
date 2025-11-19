@@ -124,6 +124,9 @@ const knownProjects = computed(() => uniq(state.tasks.map((t) => t.project).filt
 const knownTypes = computed(() => uniq(state.tasks.map((t) => t.type).filter(Boolean)).sort());
 const filteredTasks = computed(() => {
   return state.tasks.filter((t) => {
+    if (isRunning(t)) {
+      return true;
+    }
     if (state.tab === 'archived') {
       return !!t.archived;
     }
