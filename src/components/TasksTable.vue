@@ -86,7 +86,7 @@
                                 <Icon name="play" size="26" />
                             </button>
                             <button
-                                class="btn panel grey primary-action"
+                                class="btn panel primary primary-action"
                                 v-else-if="isRunning(task)"
                                 @click="stop(task)"
                                 title="Зупинити таймер"
