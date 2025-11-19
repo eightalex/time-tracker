@@ -362,6 +362,7 @@ const todayDate = computed(() => new Date());
     position: relative;
     padding-bottom: 6px;
     background: var(--surface);
+    border: 3px solid transparent;
     border-radius: var(--radius) !important;
     box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.05);
 
