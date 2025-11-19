@@ -5,6 +5,7 @@
       @create-seed="createSeed"
       @clear-all="clearAll"
       @export-data="exportData"
+      @open-export-range="openExportModal"
     />
 
     <Metrics
@@ -16,9 +17,11 @@
     />
 
     <Export
+      v-if="isExportModalOpen"
       v-model:exportStartStr="exportStartStr"
       v-model:exportEndStr="exportEndStr"
       :tasks="tasks"
+      @close="closeExportModal"
     />
 
     <div class="hr"></div>
@@ -118,6 +121,8 @@ const state = reactive({
   tick: 0,
 });
 
+const isExportModalOpen = ref(false);
+
 const today = ref(new Date());
 const suppressTaskAnimation = ref(false);
 const knownProjects = computed(() => uniq(state.tasks.map((t) => t.project).filter(Boolean)).sort());
@@ -198,6 +203,14 @@ const entriesTotalForSelectedDate = computed(() => {
   if (Number.isNaN(selectedDate.getTime())) return 0;
   return totalForDate(selectedDate);
 });
+
+function openExportModal() {
+  isExportModalOpen.value = true;
+}
+
+function closeExportModal() {
+  isExportModalOpen.value = false;
+}
 
 function setSection(nextSection) {
   state.section = nextSection;
