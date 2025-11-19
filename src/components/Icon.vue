@@ -27,6 +27,8 @@ import {
     PhTrash,
     PhXCircle,
     PhPlus,
+    PhListChecks,
+    PhChartLineUp,
 } from '@phosphor-icons/vue';
 
 const ICONS = {
@@ -44,6 +46,8 @@ const ICONS = {
     repeat: PhRepeat,
     more: PhDotsThreeVertical,
     plus: PhPlus,
+    tasks: PhListChecks,
+    chart: PhChartLineUp,
 };
 
 const props = defineProps({

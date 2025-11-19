@@ -32,6 +32,7 @@
         :class="{ active: section === 'tasks' }"
         @click="setSection('tasks')"
       >
+        <Icon name="tasks" size="18" />
         Задачі
       </button>
       <button
@@ -39,6 +40,7 @@
         :class="{ active: section === 'entries' }"
         @click="setSection('entries')"
       >
+        <Icon name="clock" size="18" />
         Записи часу
       </button>
       <button
@@ -46,6 +48,7 @@
         :class="{ active: section === 'charts' }"
         @click="setSection('charts')"
       >
+        <Icon name="chart" size="18" />
         Графіки
       </button>
     </div>
@@ -93,6 +96,7 @@ import TabsBar from './components/TabsBar.vue';
 import TasksTable from './components/TasksTable.vue';
 import TimeEntries from './components/TimeEntries.vue';
 import MonthlyCharts from './components/MonthlyCharts.vue';
+import Icon from './components/Icon.vue';
 
 import {
   uniq,
