@@ -11,12 +11,12 @@
       </div>
       <div class="metric metric--active">
         <button
-          class="btn metric-active__btn"
+          :class="activeBtnClasses"
           type="button"
           :disabled="isActiveToggleDisabled"
           @click="onToggleActive"
         >
-          {{ activeToggleIcon }}
+          <Icon :name="activeToggleIcon" size="40" />
         </button>
         <div class="metric-active__info">
           <div class="metric-active__time mono">{{ activeTaskTime }}</div>
@@ -31,6 +31,7 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
+import Icon from './Icon.vue';
 import { formatMs, formatMsS, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
 
 const props = defineProps({
@@ -121,7 +122,17 @@ const activeTaskTime = computed(() => {
   return formatMsS(task.duration ?? 0);
 });
 
-const activeToggleIcon = computed(() => (lastKnownTask.value?.isRunning ? '⏸' : '▶︎'));
+const activeToggleIcon = computed(() => (lastKnownTask.value?.isRunning ? 'pause' : 'play'));
+
+const activeBtnClasses = computed(() => {
+  const classes = ['btn', 'metric-active__btn'];
+  if (lastKnownTask.value?.isRunning) {
+    classes.push('primary');
+  } else if (lastKnownTask.value) {
+    classes.push('green');
+  }
+  return classes;
+});
 
 const isActiveToggleDisabled = computed(() => !lastKnownTask.value);
 
@@ -138,7 +149,11 @@ function onToggleActive() {
 .metric .k{font-size:20px;font-weight:700}
 .metric .l{font-size:12px;color:var(--sub)}
 .metric--active{flex-direction:row;align-items:center;gap:16px}
-.metric-active__btn{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;font-size:24px;border-radius:16px}
+.metric-active__btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:56px;height:56px;font-size:24px;border-radius:50%}
+.metric-active__btn svg {
+    width: 40px;
+    height: 40px;
+}
 .metric-active__btn:disabled{opacity:0.45;cursor:not-allowed}
 .metric-active__info{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
 .metric-active__title{max-width:206px;font-weight:600;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
