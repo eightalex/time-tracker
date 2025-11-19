@@ -149,7 +149,7 @@ function onToggleActive() {
 .metric .k{font-size:20px;font-weight:700}
 .metric .l{font-size:12px;color:var(--sub)}
 .metric--active{flex-direction:row;align-items:center;gap:16px}
-.metric-active__btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:56px;height:56px;font-size:24px;border-radius:50%}
+.metric-active__btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:56px;height:56px;font-size:24px;border:none;border-radius:50%}
 .metric-active__btn svg {
     width: 40px;
     height: 40px;
