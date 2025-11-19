@@ -360,7 +360,7 @@ textarea:focus {
 }
 
 .section-switcher__btn:not(.active):hover {
-  filter: brightness(1.05);
+  filter: brightness(1.3);
 }
 
 .section-switcher__btn:focus-visible {
