@@ -359,6 +359,7 @@ const todayDate = computed(() => new Date());
 }
 
 .task {
+    position: relative;
     padding-bottom: 6px;
     background: var(--surface);
     border-radius: var(--radius) !important;
@@ -369,6 +370,8 @@ const todayDate = computed(() => new Date());
     }
 
     &.is-running {
+        border: 3px solid #16a34a;
+
         & + .task {
             border-radius: var(--radius) var(--radius) 0 0;
         }
