@@ -17,7 +17,7 @@
 
   /* Controls */
   --input-bg: #16191f;
-  --input-bg-focus: #0f1218;
+  --input-bg-focus: #2a2f39;
   --scheme: dark;
   --btn-bg1: #181a20;
   --btn-bg2: #14161b;
@@ -44,7 +44,7 @@
     --text: #0b1020;
     --sub: #556070;
     --input-bg: #f6f6f6;
-    --input-bg-focus: #f6f8fc;
+    --input-bg-focus: #ece9e9;
     --scheme: light;
     --btn-bg1: #f6f7fb;
     --btn-bg2: #eef1f7;
@@ -64,7 +64,7 @@
   --text: #0b1020;
   --sub: #556070;
   --input-bg: #f6f6f6;
-  --input-bg-focus: #f6f8fc;
+  --input-bg-focus: #ece9e9;
   --scheme: light;
   --btn-bg1: #f6f7fb;
   --btn-bg2: #eef1f7;
@@ -82,7 +82,7 @@
   --text: #e9edf1;
   --sub: #9aa3ad;
   --input-bg: #16191f;
-  --input-bg-focus: #0f1218;
+  --input-bg-focus: #2a2f39;
   --scheme: dark;
   --btn-bg1: #181a20;
   --btn-bg2: #14161b;
