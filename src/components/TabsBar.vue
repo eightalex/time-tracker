@@ -18,7 +18,8 @@ const modelTab = computed({ get:()=>props.tab, set:v=>emit('update:tab', v) });
   display: flex;
   gap: 8px;
   margin: 14px 0;
-  padding: 10px 12px
+  background: none;
+  box-shadow: none;
 }
 
 .tab{
