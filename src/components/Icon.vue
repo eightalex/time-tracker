@@ -26,6 +26,7 @@ import {
     PhStar,
     PhTrash,
     PhXCircle,
+    PhPlus,
 } from '@phosphor-icons/vue';
 
 const ICONS = {
@@ -42,6 +43,7 @@ const ICONS = {
     question: PhQuestion,
     repeat: PhRepeat,
     more: PhDotsThreeVertical,
+    plus: PhPlus,
 };
 
 const props = defineProps({
