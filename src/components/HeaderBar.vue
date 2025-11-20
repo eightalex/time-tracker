@@ -17,10 +17,17 @@
         @click="$emit('open-export-range')"
         title="Налаштувати період експорту"
       >
+        <Icon name="upload" size="16" />
         Експорт
       </button>
-      <button class="btn ghost" @click="$emit('export-data')" title="Експортувати локальний бекап">Бекап</button>
-      <button class="btn ghost" @click="$emit('clear-all')" title="Очистити локальні дані">Очистити</button>
+      <button class="btn ghost" @click="$emit('export-data')" title="Експортувати локальний бекап">
+        <Icon name="download" size="16" />
+        Бекап
+      </button>
+      <button class="btn ghost" @click="$emit('clear-all')" title="Очистити локальні дані">
+        <Icon name="trash" size="16" />
+        Очистити
+      </button>
       <ThemeSwitcher />
     </div>
   </div>
@@ -28,6 +35,7 @@
 
 <script setup>
 import ThemeSwitcher from './ThemeSwitcher.vue';
+import Icon from './Icon.vue';
 const emit = defineEmits(['create-seed','clear-all','export-data','open-export-range']);
 const props = defineProps({
   hasTasks: { type: Boolean, default: false },
