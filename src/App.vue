@@ -37,19 +37,19 @@
       </button>
       <button
         class="section-switcher__btn"
-        :class="{ active: section === 'entries' }"
-        @click="setSection('entries')"
-      >
-        <Icon name="clock" size="18" />
-        Записи часу
-      </button>
-      <button
-        class="section-switcher__btn"
         :class="{ active: section === 'charts' }"
         @click="setSection('charts')"
       >
         <Icon name="chart" size="18" />
         Графіки
+      </button>
+      <button
+        class="section-switcher__btn"
+        :class="{ active: section === 'entries' }"
+        @click="setSection('entries')"
+      >
+        <Icon name="clock" size="18" />
+        Записи часу
       </button>
     </div>
 
