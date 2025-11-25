@@ -4,6 +4,10 @@
       <div>
         <h2 class="monthly-chart__title">Графік по днях</h2>
         <p class="monthly-chart__subtitle">Місяць: {{ monthTitle }}</p>
+        <p class="monthly-chart__total">
+          Всього за місяць:
+          <span class="monthly-chart__total-value mono">{{ monthlyTotalFormatted }}</span>
+        </p>
       </div>
       <input
         class="monthly-chart__month"
@@ -155,6 +159,9 @@ watch(legend, (items) => {
     activeTaskId.value = null;
   }
 });
+
+const monthlyTotalMs = computed(() => rawDays.value.reduce((sum, day) => sum + day.totalMs, 0));
+const monthlyTotalFormatted = computed(() => formatMs(monthlyTotalMs.value));
 
 const days = computed(() => {
   if (!activeTaskId.value) return rawDays.value;
@@ -368,6 +375,16 @@ function legendClasses(taskId) {
   margin: 4px 0 0;
   color: var(--sub);
   font-size: 13px;
+}
+
+.monthly-chart__total {
+  margin: 4px 0 0;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.monthly-chart__total-value {
+  color: var(--text, #111);
 }
 
 .chart-grid {
