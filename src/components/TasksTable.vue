@@ -125,10 +125,12 @@
                     </div>
                     <div class="thead grid">
                         <div class="nowrap">Сьогодні</div>
+                        <div class="nowrap">За поточний місяць</div>
                         <div class="nowrap">За увесь час</div>
                     </div>
                     <div class="row grid">
                         <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, todayDate, nowTs)) }}</div>
                         <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs)) }}</div>
                     </div>
                 </div>
@@ -140,7 +142,14 @@
 <script setup>
 import { computed, ref } from 'vue';
 import Icon from './Icon.vue';
-import { isRunning, formatMsS, totalForTaskOnDate, totalForTaskOverall, cryptoRandomId } from '../helpers';
+import {
+    isRunning,
+    formatMsS,
+    totalForTaskOnDate,
+    totalForTaskInMonth,
+    totalForTaskOverall,
+    cryptoRandomId
+} from '../helpers';
 
 const props = defineProps({
     filteredTasks: { type: Array, required: true },
@@ -406,6 +415,10 @@ const todayDate = computed(() => new Date());
         a:hover {
             background-color: var(--muted);
         }
+    }
+
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .title-main {
