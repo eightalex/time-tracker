@@ -1,12 +1,12 @@
 <template>
   <div class="time-entries card">
     <div class="time-entries__toolbar">
-      <label class="time-entries__date">
-        <input type="date" v-model="modelDate" />
-      </label>
       <div class="time-entries__total">
         Всього: <span class="mono">{{ formatMs(totalMs) }}</span>
       </div>
+      <label class="time-entries__date">
+        <input type="date" v-model="modelDate" />
+      </label>
     </div>
 
     <div v-if="entries.length" class="time-entries__list">
@@ -200,7 +200,7 @@ watch(
 </script>
 
 <style scoped>
-.time-entries{padding:16px 18px;display:flex;flex-direction:column;gap:18px;}
+.time-entries{padding:18px;display:flex;flex-direction:column;gap:18px;}
 .time-entries__toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;}
 .time-entries__date{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub);}
 .time-entries__date input{min-width:200px;}
