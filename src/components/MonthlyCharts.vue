@@ -454,8 +454,7 @@ function legendClasses(taskId) {
   gap: 8px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--input-bg);
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
 }
@@ -474,10 +473,6 @@ function legendClasses(taskId) {
 
 .legend-item__value {
   font-weight: 600;
-}
-
-.legend-item:hover {
-  border-color: var(--accent, #2563eb);
 }
 
 .legend-item.is-active {

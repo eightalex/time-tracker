@@ -207,7 +207,14 @@ watch(
 .time-entries__total{font-weight:600;color:var(--text);}
 
 .time-entries__list{display:flex;flex-direction:column;gap:16px;}
-.time-entry{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface);display:flex;flex-direction:column;gap:12px;}
+.time-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background-color: var(--input-bg);
+  border-radius: 12px;
+}
 .time-entry__header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;}
 .time-entry__title{font-weight:600;}
 .time-entry__meta{display:flex;gap:8px;color:var(--sub);font-size:13px;}
