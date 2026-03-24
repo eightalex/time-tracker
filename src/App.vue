@@ -82,6 +82,7 @@
       :tasks="tasks"
       :today="today"
       :tick="tick"
+      @create-entry="onCreateEntry"
     />
   </div>
 </template>
@@ -126,6 +127,7 @@ const state = reactive({
 });
 
 const isExportModalOpen = ref(false);
+const hasLoadedTasks = ref(false);
 
 const today = ref(new Date());
 const suppressTaskAnimation = ref(false);
@@ -252,6 +254,40 @@ function onRemoveEntry(payload) {
   save();
 }
 
+function onCreateEntry(payload) {
+  if (!payload) return;
+  const { taskId, start, end, dateStr } = payload;
+  if (typeof taskId !== 'string' || typeof start !== 'number' || typeof end !== 'number') {
+    return;
+  }
+  if (Number.isNaN(start) || Number.isNaN(end)) {
+    alert('Не вдалося створити запис через некоректний час.');
+    return;
+  }
+  if (end <= start) {
+    alert('Час завершення має бути пізнішим за час початку.');
+    return;
+  }
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task) {
+    alert('Не вдалося знайти вибрану задачу.');
+    return;
+  }
+  if (!Array.isArray(task.logs)) {
+    task.logs = [];
+  }
+  task.logs.push({
+    id: cryptoRandomId(),
+    start,
+    end,
+    ms: Math.max(0, end - start),
+  });
+  if (typeof dateStr === 'string' && dateStr) {
+    state.entriesDateStr = dateStr;
+  }
+  save();
+}
+
 function addTask(){
   const f = state.form;
   const title = (f.title||'').trim();
@@ -337,6 +373,7 @@ function onAddTask(payload){
 }
 function onRemoveTask(id){ state.tasks = state.tasks.filter(t=> t.id !== id); save(); }
 async function save(){
+  if (!hasLoadedTasks.value) return;
   try{
     await saveTasksToDb(state.tasks);
   }catch(e){
@@ -349,6 +386,8 @@ async function load(){
     if(Array.isArray(tasks)) state.tasks = tasks;
   }catch(e){
     console.warn('Load failed', e);
+  } finally {
+    hasLoadedTasks.value = true;
   }
 }
 function createSeed(){ if(!confirm('Додати кілька демо-задач?')) return; const now = Date.now(); const p = (title, project, type) => ({ id: cryptoRandomId(), title, link:'', project, type, archived:false, persistent:false, logs:[], running:null, createdAt: now }); const a = p('TB: виправити помилку ACF','Traffic Bureau','dev'); const b = p('Planka: валідація форм','Internal','dev'); const c = p('Рефакторинг таблиць','Mezha','frontend'); const lastM = prevMonth(new Date()); const lastMStart = firstDayOfMonth(lastM).getTime(); const day1 = lastMStart + 3*86400000 + 9*3600000; const day2 = lastMStart + 10*86400000 + 14*3600000; a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000}); b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000}); const today = new Date(); today.setHours(10,0,0,0); const todayStart = today.getTime(); c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000}); state.tasks.unshift(a,b,c); save(); }
