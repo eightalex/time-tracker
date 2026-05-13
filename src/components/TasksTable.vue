@@ -342,9 +342,18 @@ function stopIfRunning(task) {
 
 const orderedTasks = computed(() => {
     return [...props.filteredTasks].sort(
-        (a, b) => Number(isRunning(b)) - Number(isRunning(a))
+        (a, b) => lastStartedAt(b) - lastStartedAt(a)
     );
 });
+
+function lastStartedAt(task) {
+    const runningStart = typeof task?.running?.start === 'number' ? task.running.start : 0;
+    const logs = Array.isArray(task?.logs) ? task.logs : [];
+    const lastLogStart = logs.reduce((latest, log) => {
+        return typeof log?.start === 'number' ? Math.max(latest, log.start) : latest;
+    }, 0);
+    return Math.max(runningStart, lastLogStart, task?.createdAt || 0);
+}
 
 // reactive "now" for live updates
 const nowTs = computed(() => {

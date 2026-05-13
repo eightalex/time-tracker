@@ -886,7 +886,7 @@ function legendClasses(taskId) {
 }
 
 .chart-grid__value {
-  font-size: 10px;
+  font-size: 8px;
   color: var(--sub);
   transition: opacity 0.18s ease;
 }
