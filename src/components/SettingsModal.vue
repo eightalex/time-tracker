@@ -12,8 +12,17 @@
           <input
             type="text"
             inputmode="decimal"
-            :value="timeCoefficient"
+            v-model="coefficientInputValue"
             @input="onCoefficientInput"
+          />
+        </label>
+        <label class="settings-field">
+          <span>Вартість години, $</span>
+          <input
+            type="text"
+            inputmode="decimal"
+            v-model="hourlyRateInputValue"
+            @input="onHourlyRateInput"
           />
         </label>
         <button type="button" class="settings-action" @click="emit('open-export-range')">
@@ -34,16 +43,46 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
 import Icon from './Icon.vue';
 
-const emit = defineEmits(['close','open-export-range','export-data','clear-all']);
+const emit = defineEmits(['close','open-export-range','export-data','clear-all','update:timeCoefficient','update:hourlyRate']);
 const props = defineProps({
   timeCoefficient: { type: Number, default: 1 },
+  hourlyRate: { type: Number, default: 0 },
 });
+
+const coefficientInputValue = ref(String(props.timeCoefficient));
+const hourlyRateInputValue = ref(String(props.hourlyRate));
+
+watch(
+  () => props.timeCoefficient,
+  (value) => {
+    const normalized = String(value);
+    if (Number.parseFloat(coefficientInputValue.value.replace(',', '.')) !== value) {
+      coefficientInputValue.value = normalized;
+    }
+  }
+);
+
+watch(
+  () => props.hourlyRate,
+  (value) => {
+    const normalized = String(value);
+    if (Number.parseFloat(hourlyRateInputValue.value.replace(',', '.')) !== value) {
+      hourlyRateInputValue.value = normalized;
+    }
+  }
+);
 
 function onCoefficientInput(event){
   const parsed = Number.parseFloat(String(event.target.value).replace(',', '.'));
   emit('update:timeCoefficient', Number.isFinite(parsed) && parsed >= 0 ? parsed : 1);
+}
+
+function onHourlyRateInput(event){
+  const parsed = Number.parseFloat(String(event.target.value).replace(',', '.'));
+  emit('update:hourlyRate', Number.isFinite(parsed) && parsed >= 0 ? parsed : 0);
 }
 </script>
 
@@ -84,14 +123,22 @@ function onCoefficientInput(event){
 
 .settings-field{
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   color: var(--sub);
   font-size: 13px;
 }
 
+.settings-field + .settings-action{
+  margin-top: 10px;
+}
+
 .settings-field input{
-  width: 100%;
+  width: 92px;
+  flex: 0 0 92px;
+  padding: 9px 10px;
+  text-align: right;
 }
 
 .settings-action{

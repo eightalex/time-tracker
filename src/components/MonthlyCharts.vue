@@ -8,6 +8,10 @@
           Всього за місяць:
           <span class="monthly-chart__total-value mono">{{ monthlyTotalFormatted }}</span>
         </p>
+        <p v-if="showEarnings" class="monthly-chart__total">
+          Зароблено:
+          <span class="monthly-chart__total-value monthly-chart__total-value--money mono">{{ formatUsd(earnedForMs(monthlyTotalMs, hourlyRate)) }}</span>
+        </p>
       </div>
       <input
         class="monthly-chart__month"
@@ -176,6 +180,7 @@
         <span class="legend-item__swatch" :style="{ backgroundColor: item.color }"></span>
         <span class="legend-item__title">{{ item.title }}</span>
         <span class="legend-item__value mono">{{ item.hours }}</span>
+        <span v-if="showEarnings" class="legend-item__money mono">{{ item.earned }}</span>
       </div>
     </div>
   </div>
@@ -190,6 +195,9 @@ import {
   monthLabel,
   formatMs,
   applyTimeCoefficient,
+  earnedForMs,
+  formatUsd,
+  shouldShowEarnings,
   startOfDay,
 } from '../helpers';
 import Icon from './Icon.vue';
@@ -211,6 +219,7 @@ const props = defineProps({
   today: { type: Object, default: () => new Date() },
   tick: { type: Number, default: 0 },
   timeCoefficient: { type: Number, default: 1 },
+  hourlyRate: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['create-entry']);
@@ -270,6 +279,7 @@ const rawDays = computed(() => {
 const maxTotalMs = computed(() => {
   return days.value.reduce((max, day) => Math.max(max, day.totalMs), 0);
 });
+const showEarnings = computed(() => shouldShowEarnings(props.hourlyRate));
 
 const legend = computed(() => {
   const totals = new Map();
@@ -288,6 +298,7 @@ const legend = computed(() => {
       title: item.title,
       color: item.color,
       hours: formatHours(item.ms),
+      earned: formatUsd(earnedForMs(item.ms, props.hourlyRate)),
     }));
 });
 
@@ -827,6 +838,10 @@ function legendClasses(taskId) {
   color: var(--text, #111);
 }
 
+.monthly-chart__total-value--money {
+  color: var(--accent);
+}
+
 .monthly-chart__body {
   overflow-x: auto;
   overflow-y: hidden;
@@ -1127,6 +1142,11 @@ function legendClasses(taskId) {
 
 .legend-item__value {
   font-weight: 600;
+}
+
+.legend-item__money {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .legend-item.is-active {

@@ -3,10 +3,12 @@
     <div class="metrics">
       <div class="metric">
         <div class="k mono">{{ formatMs(todayTotal) }}</div>
+        <div v-if="showEarnings" class="metric__money mono">{{ formatUsd(earnedForMs(todayTotal, hourlyRate)) }}</div>
         <div class="l">Сьогодні ({{ toISODate(today) }})</div>
       </div>
       <div class="metric">
         <div class="k mono">{{ formatMs(monthTotal) }}</div>
+        <div v-if="showEarnings" class="metric__money mono">{{ formatUsd(earnedForMs(monthTotal, hourlyRate)) }}</div>
         <div class="l">За {{ monthLabel(currentMonthDate) }}</div>
       </div>
       <div class="metric metric--active">
@@ -20,6 +22,9 @@
         </button>
         <div class="metric-active__info">
           <div class="metric-active__time mono">{{ activeTaskTime }}</div>
+          <div v-if="showEarnings && activeTaskMs" class="metric-active__money mono">
+            {{ formatUsd(earnedForMs(activeTaskMs, hourlyRate)) }}
+          </div>
           <div class="metric-active__title" :title="activeTaskTitle">
             {{ activeTaskTitle }}
           </div>
@@ -32,7 +37,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import Icon from './Icon.vue';
-import { applyTimeCoefficient, formatMs, formatMsS, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
+import { applyTimeCoefficient, earnedForMs, formatMs, formatMsS, formatUsd, shouldShowEarnings, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
 
 const props = defineProps({
   today: { type: Date, required: true },
@@ -40,6 +45,7 @@ const props = defineProps({
   runningCount: { type: Number, required: true },
   tick: { type: Number, default: 0 },
   timeCoefficient: { type: Number, default: 1 },
+  hourlyRate: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['toggle-active-task']);
@@ -49,6 +55,7 @@ const currentMonthDate = computed(() => new Date(new Date().getFullYear(), new D
 // Live totals (depend on tick so running timers update)
 const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today, props.timeCoefficient); });
 const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value, props.timeCoefficient); });
+const showEarnings = computed(() => shouldShowEarnings(props.hourlyRate));
 
 const lastKnownTask = ref(null);
 
@@ -113,14 +120,18 @@ function refreshLastKnown(tasks) {
 
 const activeTaskTitle = computed(() => lastKnownTask.value?.title || 'Немає активних таймерів');
 
-const activeTaskTime = computed(() => {
+const activeTaskMs = computed(() => {
   props.tick;
   const task = lastKnownTask.value;
-  if (!task) return '00:00:00';
+  if (!task) return 0;
   if (task.isRunning) {
-    return formatMsS(applyTimeCoefficient(Math.max(0, Date.now() - task.start), props.timeCoefficient));
+    return applyTimeCoefficient(Math.max(0, Date.now() - task.start), props.timeCoefficient);
   }
-  return formatMsS(applyTimeCoefficient(task.duration ?? 0, props.timeCoefficient));
+  return applyTimeCoefficient(task.duration ?? 0, props.timeCoefficient);
+});
+
+const activeTaskTime = computed(() => {
+  return activeTaskMs.value ? formatMsS(activeTaskMs.value) : '00:00:00';
 });
 
 const activeToggleIcon = computed(() => (lastKnownTask.value?.isRunning ? 'pause' : 'play'));
@@ -148,6 +159,7 @@ function onToggleActive() {
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:12px;}
 .metric{padding:16px;border-radius:14px;background:var(--input-bg);display:flex;flex-direction:column;justify-content:center;gap:8px}
 .metric .k{font-size:20px;font-weight:700}
+.metric__money{font-size:15px;font-weight:700;color:var(--accent)}
 .metric .l{font-size:12px;color:var(--sub)}
 .metric--active{flex-direction:row;align-items:center;gap:16px}
 .metric-active__btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:56px;height:56px;font-size:24px;border:none;border-radius:50%}
@@ -159,4 +171,5 @@ function onToggleActive() {
 .metric-active__info{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
 .metric-active__title{max-width:145px;font-weight:600;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .metric-active__time{font-size:18px;font-weight:600;color:var(--text)}
+.metric-active__money{font-size:13px;font-weight:700;color:var(--accent)}
 </style>

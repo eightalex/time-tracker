@@ -3,6 +3,9 @@
     <div class="time-entries__toolbar">
       <div class="time-entries__total">
         Всього: <span class="mono">{{ formatMs(totalMs) }}</span>
+        <span v-if="showEarnings" class="time-entries__money mono">
+          {{ formatUsd(earnedForMs(totalMs, hourlyRate)) }}
+        </span>
       </div>
       <label class="time-entries__date">
         <input type="date" v-model="modelDate" />
@@ -71,7 +74,11 @@
           </div>
           <div class="time-entry__field">
             <span class="label">Тривалість</span>
-            <span class="mono">{{ formatMs(applyTimeCoefficient(entry.ms, timeCoefficient)) }}</span>
+            <span class="mono">{{ formatMs(entryAdjustedMs(entry)) }}</span>
+          </div>
+          <div v-if="showEarnings" class="time-entry__field">
+            <span class="label">Зароблено</span>
+            <span class="mono time-entry__money">{{ formatUsd(earnedForMs(entryAdjustedMs(entry), hourlyRate)) }}</span>
           </div>
         </div>
       </div>
@@ -82,13 +89,14 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { applyTimeCoefficient, formatMs, toInputDate } from '../helpers';
+import { applyTimeCoefficient, earnedForMs, formatMs, formatUsd, shouldShowEarnings, toInputDate } from '../helpers';
 
 const props = defineProps({
   entries: { type: Array, default: () => [] },
   dateStr: { type: String, default: '' },
   totalMs: { type: Number, default: 0 },
   timeCoefficient: { type: Number, default: 1 },
+  hourlyRate: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['update-date', 'update-entry', 'remove-entry']);
@@ -112,6 +120,7 @@ watch(
 );
 
 const reversedEntries = computed(() => [...props.entries].reverse());
+const showEarnings = computed(() => shouldShowEarnings(props.hourlyRate));
 
 const timeFormatter = new Intl.DateTimeFormat('uk-UA', {
   hour: '2-digit',
@@ -125,6 +134,10 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
 function formatDateTime(ts) {
   const d = new Date(ts);
   return `${dateFormatter.format(d)} ${timeFormatter.format(d)}`;
+}
+
+function entryAdjustedMs(entry) {
+  return applyTimeCoefficient(entry.ms, props.timeCoefficient);
 }
 
 function toLocalInput(ts) {
@@ -205,7 +218,8 @@ watch(
 .time-entries__toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;}
 .time-entries__date{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub);}
 .time-entries__date input{min-width:200px;}
-.time-entries__total{font-weight:600;color:var(--text);}
+.time-entries__total{display:flex;gap:8px;flex-wrap:wrap;font-weight:600;color:var(--text);}
+.time-entries__money{color:var(--accent);}
 
 .time-entries__list{display:flex;flex-direction:column;gap:16px;}
 .time-entry {
@@ -224,6 +238,7 @@ watch(
 .time-entry__body{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;align-items:center;}
 .time-entry__field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub);}
 .time-entry__field input{width:100%;}
+.time-entry__money{color:var(--accent);font-weight:700;}
 .label{font-size:12px;color:var(--sub);}
 
 @media (max-width:700px){

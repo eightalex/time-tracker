@@ -123,15 +123,19 @@
                             </div>
                         </div>
                     </div>
-                    <div class="thead grid">
+                    <div class="thead grid" :class="{ 'grid--earnings': showEarnings }">
                         <div class="nowrap">Сьогодні</div>
                         <div class="nowrap">За поточний місяць</div>
                         <div class="nowrap">За увесь час</div>
+                        <div v-if="showEarnings" class="nowrap">Зароблено</div>
                     </div>
-                    <div class="row grid">
+                    <div class="row grid" :class="{ 'grid--earnings': showEarnings }">
                         <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs, timeCoefficient)) }}</div>
                         <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, todayDate, nowTs, timeCoefficient)) }}</div>
                         <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs, timeCoefficient)) }}</div>
+                        <div v-if="showEarnings" class="mono nowrap earnings-value">
+                            {{ formatUsd(earnedForMs(totalForTaskOverall(task, nowTs, timeCoefficient), hourlyRate)) }}
+                        </div>
                     </div>
                 </div>
             </TransitionGroup>
@@ -148,6 +152,9 @@ import {
     totalForTaskOnDate,
     totalForTaskInMonth,
     totalForTaskOverall,
+    earnedForMs,
+    formatUsd,
+    shouldShowEarnings,
     cryptoRandomId
 } from '../helpers';
 
@@ -156,12 +163,14 @@ const props = defineProps({
     allTasks: { type: Array },
     disableAnimation: { type: Boolean, default: false },
     tick: { type: Number, default: 0 },
-    timeCoefficient: { type: Number, default: 1 }
+    timeCoefficient: { type: Number, default: 1 },
+    hourlyRate: { type: Number, default: 0 }
 });
 
 const emit = defineEmits(['remove-task']);
 
 const openMenuFor = ref(null);
+const showEarnings = computed(() => shouldShowEarnings(props.hourlyRate));
 
 function toggleMenu(taskId) {
     openMenuFor.value = openMenuFor.value === taskId ? null : taskId;
@@ -420,6 +429,15 @@ const todayDate = computed(() => new Date());
 
     .grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+
+        &.grid--earnings {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    .earnings-value {
+        color: var(--accent);
+        font-weight: 700;
     }
 
     .title-main {

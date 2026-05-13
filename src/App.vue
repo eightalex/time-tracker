@@ -12,6 +12,7 @@
       :running-count="runningCount"
       :tick="tick"
       :time-coefficient="timeCoefficient"
+      :hourly-rate="hourlyRate"
       @toggle-active-task="onToggleActiveTask"
     />
 
@@ -27,6 +28,7 @@
     <SettingsModal
       v-if="isSettingsModalOpen"
       v-model:timeCoefficient="timeCoefficient"
+      v-model:hourlyRate="hourlyRate"
       @close="closeSettingsModal"
       @open-export-range="openExportModalFromSettings"
       @export-data="exportDataFromSettings"
@@ -73,6 +75,7 @@
         :disable-animation="suppressTaskAnimation"
         :tick="tick"
         :time-coefficient="timeCoefficient"
+        :hourly-rate="hourlyRate"
         @remove-task="onRemoveTask"
       />
     </template>
@@ -83,6 +86,7 @@
       :date-str="entriesDateStr"
       :total-ms="entriesTotalForSelectedDate"
       :time-coefficient="timeCoefficient"
+      :hourly-rate="hourlyRate"
       @update-date="onEntriesDateChange"
       @update-entry="onUpdateEntry"
       @remove-entry="onRemoveEntry"
@@ -94,6 +98,7 @@
       :today="today"
       :tick="tick"
       :time-coefficient="timeCoefficient"
+      :hourly-rate="hourlyRate"
       @create-entry="onCreateEntry"
     />
   </div>
@@ -127,11 +132,13 @@ import {
   midpointWithin,
   isRunning,
   normalizeTimeCoefficient,
+  normalizeHourlyRate,
   applyTimeCoefficient,
 } from './helpers';
 import { saveTasksToDb, loadTasksFromDb, clearTasksInDb } from './storage/tasksStore';
 
 const TIME_COEFFICIENT_STORAGE_KEY = 'time-tracker.timeCoefficient';
+const HOURLY_RATE_STORAGE_KEY = 'time-tracker.hourlyRate';
 
 const state = reactive({
   tasks: [],
@@ -141,6 +148,7 @@ const state = reactive({
   exportEndStr: toInputDate(new Date()),
   entriesDateStr: toInputDate(new Date()),
   timeCoefficient: loadTimeCoefficient(),
+  hourlyRate: loadHourlyRate(),
   tick: 0,
 });
 
@@ -488,16 +496,30 @@ function loadTimeCoefficient(){
   }
 }
 
+function loadHourlyRate(){
+  if (typeof window === 'undefined') return 0;
+  try{
+    const raw = window.localStorage.getItem(HOURLY_RATE_STORAGE_KEY);
+    return raw === null ? 0 : normalizeHourlyRate(raw);
+  }catch(e){
+    return 0;
+  }
+}
+
 setInterval(()=> state.tick++, 1000);
 watch(()=>state.tasks, save, {deep:true});
 watch(()=>state.timeCoefficient, (value) => {
   state.timeCoefficient = normalizeTimeCoefficient(value);
   try{ window.localStorage.setItem(TIME_COEFFICIENT_STORAGE_KEY, String(state.timeCoefficient)); }catch(e){ /* noop */ }
 });
+watch(()=>state.hourlyRate, (value) => {
+  state.hourlyRate = normalizeHourlyRate(value);
+  try{ window.localStorage.setItem(HOURLY_RATE_STORAGE_KEY, String(state.hourlyRate)); }catch(e){ /* noop */ }
+});
 onMounted(()=>{ load(); });
 
 // expose to template
-const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, timeCoefficient, tick } = toRefs(state);
+const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, timeCoefficient, hourlyRate, tick } = toRefs(state);
 
 // ---- Browser title: show running timer HH:MM ----
 const defaultTitle = document.title;

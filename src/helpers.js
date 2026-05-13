@@ -49,6 +49,23 @@ export function normalizeTimeCoefficient(value){
 export function applyTimeCoefficient(ms, coefficient=1){
   return ms * normalizeTimeCoefficient(coefficient);
 }
+export function normalizeHourlyRate(value){
+  const parsed = Number.parseFloat(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+export function shouldShowEarnings(hourlyRate){
+  return normalizeHourlyRate(hourlyRate) > 0;
+}
+export function earnedForMs(ms, hourlyRate){
+  return (Math.max(0, ms) / 3600000) * normalizeHourlyRate(hourlyRate);
+}
+export function formatUsd(amount){
+  const value = Number.isFinite(amount) ? amount : 0;
+  return '$' + value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 // Totals
 export function taskTotalInRange(task, r0, r1){
