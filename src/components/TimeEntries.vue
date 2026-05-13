@@ -89,13 +89,14 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { applyTimeCoefficient, earnedForMs, formatMs, formatUsd, shouldShowEarnings, toInputDate } from '../helpers';
+import { adjustedLogMs, earnedForMs, formatMs, formatUsd, shouldShowEarnings, toInputDate } from '../helpers';
 
 const props = defineProps({
   entries: { type: Array, default: () => [] },
   dateStr: { type: String, default: '' },
   totalMs: { type: Number, default: 0 },
   timeCoefficient: { type: Number, default: 1 },
+  timeCoefficientAppliesToAll: { type: Boolean, default: false },
   hourlyRate: { type: Number, default: 0 },
 });
 
@@ -137,7 +138,10 @@ function formatDateTime(ts) {
 }
 
 function entryAdjustedMs(entry) {
-  return applyTimeCoefficient(entry.ms, props.timeCoefficient);
+  return adjustedLogMs(entry, {
+    coefficient: props.timeCoefficient,
+    applyToAll: props.timeCoefficientAppliesToAll,
+  });
 }
 
 function toLocalInput(ts) {

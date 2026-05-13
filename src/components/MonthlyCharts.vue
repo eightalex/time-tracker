@@ -195,6 +195,7 @@ import {
   monthLabel,
   formatMs,
   applyTimeCoefficient,
+  effectiveLogCoefficient,
   earnedForMs,
   formatUsd,
   shouldShowEarnings,
@@ -219,6 +220,7 @@ const props = defineProps({
   today: { type: Object, default: () => new Date() },
   tick: { type: Number, default: 0 },
   timeCoefficient: { type: Number, default: 1 },
+  timeCoefficientAppliesToAll: { type: Boolean, default: false },
   hourlyRate: { type: Number, default: 0 },
 });
 
@@ -273,7 +275,7 @@ const monthTitle = computed(() => monthLabel(monthDate.value));
 
 const rawDays = computed(() => {
   props.tick;
-  return buildMonthlyDays(props.tasks, monthDate.value, props.timeCoefficient);
+  return buildMonthlyDays(props.tasks, monthDate.value, props.timeCoefficient, props.timeCoefficientAppliesToAll);
 });
 
 const maxTotalMs = computed(() => {
@@ -654,7 +656,8 @@ function mergeIntervals(intervals) {
   return merged;
 }
 
-function buildMonthlyDays(tasks, monthStartDate, coefficient=1) {
+function buildMonthlyDays(tasks, monthStartDate, coefficient=1, applyToAll=false) {
+  const coefficientOptions = { coefficient, applyToAll };
   const start = firstDayOfMonth(monthStartDate).getTime();
   const endInclusive = lastDayOfMonth(monthStartDate).getTime();
   const endExclusive = endInclusive + 1;
@@ -672,7 +675,7 @@ function buildMonthlyDays(tasks, monthStartDate, coefficient=1) {
     return entry;
   };
 
-  const addDuration = (task, spanStart, spanEnd) => {
+  const addDuration = (task, spanStart, spanEnd, durationCoefficient) => {
     const clampedStart = Math.max(spanStart, start);
     const clampedEnd = Math.min(spanEnd, endExclusive);
     if (clampedEnd <= clampedStart) return;
@@ -682,7 +685,7 @@ function buildMonthlyDays(tasks, monthStartDate, coefficient=1) {
       const dayStart = startOfDay(new Date(cursor)).getTime();
       const nextDayStart = dayStart + DAY_MS;
       const sliceEnd = Math.min(nextDayStart, clampedEnd);
-      const delta = applyTimeCoefficient(Math.max(0, sliceEnd - cursor), coefficient);
+      const delta = applyTimeCoefficient(Math.max(0, sliceEnd - cursor), durationCoefficient);
       if (delta > 0) {
         const entry = ensureEntry(dayStart);
         entry.totalMs += delta;
@@ -709,10 +712,10 @@ function buildMonthlyDays(tasks, monthStartDate, coefficient=1) {
       const startTs = typeof log.start === 'number' ? log.start : null;
       const endTs = typeof log.end === 'number' ? log.end : null;
       if (startTs === null || endTs === null) continue;
-      addDuration(task, startTs, endTs);
+      addDuration(task, startTs, endTs, effectiveLogCoefficient(log, coefficientOptions));
     }
     if (task.running && typeof task.running.start === 'number') {
-      addDuration(task, task.running.start, Date.now());
+      addDuration(task, task.running.start, Date.now(), coefficient);
     }
   }
 

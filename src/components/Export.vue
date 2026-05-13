@@ -35,6 +35,7 @@ const props = defineProps({
   exportEndStr: String,
   tasks: { type: Array, required: true },
   timeCoefficient: { type: Number, default: 1 },
+  timeCoefficientAppliesToAll: { type: Boolean, default: false },
 });
 const emit = defineEmits(['update:exportStartStr','update:exportEndStr','close']);
 
@@ -70,7 +71,10 @@ function exportRange(){
 
 function copyTSV(){
   const {start, end} = exportRange();
-  const rows = buildTaskTotalsForRange(props.tasks, start, end, Date.now(), props.timeCoefficient);
+  const rows = buildTaskTotalsForRange(props.tasks, start, end, Date.now(), {
+    coefficient: props.timeCoefficient,
+    applyToAll: props.timeCoefficientAppliesToAll,
+  });
   const lines = [];
   const clean = s => String(s ?? '').replace(/[;\t\r\n]/g, ' ');
   for(const r of rows){

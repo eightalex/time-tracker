@@ -16,6 +16,14 @@
             @input="onCoefficientInput"
           />
         </label>
+        <label class="settings-field settings-field--checkbox">
+          <span>Застосувати до всіх записів</span>
+          <input
+            type="checkbox"
+            :checked="timeCoefficientAppliesToAll"
+            @change="emit('update:timeCoefficientAppliesToAll', $event.target.checked)"
+          />
+        </label>
         <label class="settings-field">
           <span>Вартість години, $</span>
           <input
@@ -46,9 +54,10 @@
 import { ref, watch } from 'vue';
 import Icon from './Icon.vue';
 
-const emit = defineEmits(['close','open-export-range','export-data','clear-all','update:timeCoefficient','update:hourlyRate']);
+const emit = defineEmits(['close','open-export-range','export-data','clear-all','update:timeCoefficient','update:timeCoefficientAppliesToAll','update:hourlyRate']);
 const props = defineProps({
   timeCoefficient: { type: Number, default: 1 },
+  timeCoefficientAppliesToAll: { type: Boolean, default: false },
   hourlyRate: { type: Number, default: 0 },
 });
 
@@ -139,6 +148,15 @@ function onHourlyRateInput(event){
   flex: 0 0 92px;
   padding: 9px 10px;
   text-align: right;
+}
+
+.settings-field--checkbox input{
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  text-align: initial;
+  accent-color: var(--accent);
 }
 
 .settings-action{

@@ -130,11 +130,11 @@
                         <div v-if="showEarnings" class="nowrap">Зароблено</div>
                     </div>
                     <div class="row grid" :class="{ 'grid--earnings': showEarnings }">
-                        <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs, timeCoefficient)) }}</div>
-                        <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, todayDate, nowTs, timeCoefficient)) }}</div>
-                        <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs, timeCoefficient)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs, timeCoefficient, timeCoefficientAppliesToAll)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, todayDate, nowTs, timeCoefficient, timeCoefficientAppliesToAll)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs, timeCoefficient, timeCoefficientAppliesToAll)) }}</div>
                         <div v-if="showEarnings" class="mono nowrap earnings-value">
-                            {{ formatUsd(earnedForMs(totalForTaskOverall(task, nowTs, timeCoefficient), hourlyRate)) }}
+                            {{ formatUsd(earnedForMs(totalForTaskOverall(task, nowTs, timeCoefficient, timeCoefficientAppliesToAll), hourlyRate)) }}
                         </div>
                     </div>
                 </div>
@@ -164,6 +164,7 @@ const props = defineProps({
     disableAnimation: { type: Boolean, default: false },
     tick: { type: Number, default: 0 },
     timeCoefficient: { type: Number, default: 1 },
+    timeCoefficientAppliesToAll: { type: Boolean, default: false },
     hourlyRate: { type: Number, default: 0 }
 });
 
@@ -328,7 +329,8 @@ function stop(task) {
         id: cryptoRandomId(),
         start: start.getTime(),
         end: end.getTime(),
-        ms: dur
+        ms: dur,
+        timeCoefficient: props.timeCoefficient
     });
 
     task.running = null;

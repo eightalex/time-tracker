@@ -37,7 +37,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import Icon from './Icon.vue';
-import { applyTimeCoefficient, earnedForMs, formatMs, formatMsS, formatUsd, shouldShowEarnings, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
+import { adjustedLogMs, applyTimeCoefficient, earnedForMs, formatMs, formatMsS, formatUsd, shouldShowEarnings, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
 
 const props = defineProps({
   today: { type: Date, required: true },
@@ -45,6 +45,7 @@ const props = defineProps({
   runningCount: { type: Number, required: true },
   tick: { type: Number, default: 0 },
   timeCoefficient: { type: Number, default: 1 },
+  timeCoefficientAppliesToAll: { type: Boolean, default: false },
   hourlyRate: { type: Number, default: 0 },
 });
 
@@ -53,8 +54,12 @@ const emit = defineEmits(['toggle-active-task']);
 const currentMonthDate = computed(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
 // Live totals (depend on tick so running timers update)
-const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today, props.timeCoefficient); });
-const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value, props.timeCoefficient); });
+const coefficientOptions = computed(() => ({
+  coefficient: props.timeCoefficient,
+  applyToAll: props.timeCoefficientAppliesToAll,
+}));
+const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today, coefficientOptions.value); });
+const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value, coefficientOptions.value); });
 const showEarnings = computed(() => shouldShowEarnings(props.hourlyRate));
 
 const lastKnownTask = ref(null);
@@ -94,7 +99,6 @@ function refreshLastKnown(tasks) {
         const start = typeof log?.start === 'number' ? log.start : null;
         if (start === null) continue;
         const end = typeof log?.end === 'number' ? log.end : start;
-        const duration = typeof log?.ms === 'number' ? log.ms : Math.max(0, end - start);
         if (start > lastLogStart) {
           lastLogStart = start;
           lastLogCandidate = {
@@ -102,7 +106,7 @@ function refreshLastKnown(tasks) {
             title,
             start,
             isRunning: false,
-            duration,
+            log,
           };
         }
       }
@@ -127,7 +131,7 @@ const activeTaskMs = computed(() => {
   if (task.isRunning) {
     return applyTimeCoefficient(Math.max(0, Date.now() - task.start), props.timeCoefficient);
   }
-  return applyTimeCoefficient(task.duration ?? 0, props.timeCoefficient);
+  return adjustedLogMs(task.log, coefficientOptions.value);
 });
 
 const activeTaskTime = computed(() => {

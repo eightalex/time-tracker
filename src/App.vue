@@ -12,6 +12,7 @@
       :running-count="runningCount"
       :tick="tick"
       :time-coefficient="timeCoefficient"
+      :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
       :hourly-rate="hourlyRate"
       @toggle-active-task="onToggleActiveTask"
     />
@@ -22,12 +23,14 @@
       v-model:exportEndStr="exportEndStr"
       :tasks="tasks"
       :time-coefficient="timeCoefficient"
+      :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
       @close="closeExportModal"
     />
 
     <SettingsModal
       v-if="isSettingsModalOpen"
       v-model:timeCoefficient="timeCoefficient"
+      v-model:timeCoefficientAppliesToAll="timeCoefficientAppliesToAll"
       v-model:hourlyRate="hourlyRate"
       @close="closeSettingsModal"
       @open-export-range="openExportModalFromSettings"
@@ -75,6 +78,7 @@
         :disable-animation="suppressTaskAnimation"
         :tick="tick"
         :time-coefficient="timeCoefficient"
+        :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
         :hourly-rate="hourlyRate"
         @remove-task="onRemoveTask"
       />
@@ -86,6 +90,7 @@
       :date-str="entriesDateStr"
       :total-ms="entriesTotalForSelectedDate"
       :time-coefficient="timeCoefficient"
+      :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
       :hourly-rate="hourlyRate"
       @update-date="onEntriesDateChange"
       @update-entry="onUpdateEntry"
@@ -98,6 +103,7 @@
       :today="today"
       :tick="tick"
       :time-coefficient="timeCoefficient"
+      :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
       :hourly-rate="hourlyRate"
       @create-entry="onCreateEntry"
     />
@@ -134,10 +140,13 @@ import {
   normalizeTimeCoefficient,
   normalizeHourlyRate,
   applyTimeCoefficient,
+  adjustedLogMs,
+  adjustedLogOverlapMs,
 } from './helpers';
 import { saveTasksToDb, loadTasksFromDb, clearTasksInDb } from './storage/tasksStore';
 
 const TIME_COEFFICIENT_STORAGE_KEY = 'time-tracker.timeCoefficient';
+const TIME_COEFFICIENT_APPLIES_TO_ALL_STORAGE_KEY = 'time-tracker.timeCoefficientAppliesToAll';
 const HOURLY_RATE_STORAGE_KEY = 'time-tracker.hourlyRate';
 
 const state = reactive({
@@ -148,6 +157,7 @@ const state = reactive({
   exportEndStr: toInputDate(new Date()),
   entriesDateStr: toInputDate(new Date()),
   timeCoefficient: loadTimeCoefficient(),
+  timeCoefficientAppliesToAll: loadTimeCoefficientAppliesToAll(),
   hourlyRate: loadHourlyRate(),
   tick: 0,
 });
@@ -224,6 +234,7 @@ const entriesForSelectedDate = computed(() => {
         start,
         end,
         ms,
+        timeCoefficient: log.timeCoefficient,
       });
     }
   }
@@ -331,6 +342,7 @@ function onCreateEntry(payload) {
     start,
     end,
     ms: Math.max(0, end - start),
+    timeCoefficient: state.timeCoefficient,
   });
   if (typeof dateStr === 'string' && dateStr) {
     state.entriesDateStr = dateStr;
@@ -360,7 +372,7 @@ function unarchive(task){ task.archived=false; save(); }
 function remove(task){ if(!confirm('Видалити задачу? Дію неможливо скасувати.')) return; stopIfRunning(task); state.tasks = state.tasks.filter(t=>t.id!==task.id); save(); }
 
 function start(task){ state.tasks.forEach(t=>{ if(isRunning(t)) stop(t); }); task.running = { start: Date.now() }; }
-function stop(task){ if(!isRunning(task)) return; const start = new Date(task.running.start); const end = new Date(); const dur = Math.max(0, end - start); task.logs.push({ id: cryptoRandomId(), start: start.getTime(), end: end.getTime(), ms: dur }); task.running = null; save(); }
+function stop(task){ if(!isRunning(task)) return; const start = new Date(task.running.start); const end = new Date(); const dur = Math.max(0, end - start); task.logs.push({ id: cryptoRandomId(), start: start.getTime(), end: end.getTime(), ms: dur, timeCoefficient: state.timeCoefficient }); task.running = null; save(); }
 function stopIfRunning(task){ if(isRunning(task)) stop(task); }
 
 function onToggleActiveTask(payload){
@@ -370,20 +382,21 @@ function onToggleActiveTask(payload){
   if(isRunning(task)) stop(task); else start(task);
 }
 
-function totalForDate(dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, d0, d1); } return applyTimeCoefficient(sum + runningOverlapInRange(d0, d1), state.timeCoefficient); }
-function totalForMonth(monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, m0, m1); } return applyTimeCoefficient(sum + runningOverlapInRange(m0, m1), state.timeCoefficient); }
-function totalForTaskOnDate(task, dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); const now = Date.now(); state.tick; return applyTimeCoefficient(taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, now, d0, d1) : 0), state.timeCoefficient); }
-function totalForTaskInMonth(task, monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); return applyTimeCoefficient(taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), m0, m1) : 0), state.timeCoefficient); }
-function totalForTaskOverall(task){ let sum = 0; for(const log of task.logs){ sum += (typeof log.ms === 'number') ? log.ms : Math.max(0, (log.end||0) - (log.start||0)); } if(isRunning(task)){ state.tick; sum += Date.now() - task.running.start; } return applyTimeCoefficient(sum, state.timeCoefficient); }
-function taskTotalInRange(task, r0, r1){ let sum = 0; for(const log of task.logs){ sum += overlapMs(log.start, log.end, r0, r1); } return sum; }
-function runningOverlapInRange(r0, r1){ let sum = 0; for(const t of state.tasks){ if(isRunning(t)) sum += overlapMs(t.running.start, Date.now(), r0, r1); } return sum; }
+function coefficientOptions(){ return { coefficient: state.timeCoefficient, applyToAll: state.timeCoefficientAppliesToAll }; }
+function totalForDate(dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, d0, d1, coefficientOptions()); } return sum + runningOverlapInRange(d0, d1); }
+function totalForMonth(monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, m0, m1, coefficientOptions()); } return sum + runningOverlapInRange(m0, m1); }
+function totalForTaskOnDate(task, dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); const now = Date.now(); state.tick; return taskTotalInRange(task, d0, d1, coefficientOptions()) + (isRunning(task) ? applyTimeCoefficient(overlapMs(task.running.start, now, d0, d1), state.timeCoefficient) : 0); }
+function totalForTaskInMonth(task, monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); return taskTotalInRange(task, m0, m1, coefficientOptions()) + (isRunning(task) ? applyTimeCoefficient(overlapMs(task.running.start, Date.now(), m0, m1), state.timeCoefficient) : 0); }
+function totalForTaskOverall(task){ let sum = 0; for(const log of task.logs){ sum += adjustedLogMs(log, coefficientOptions()); } if(isRunning(task)){ state.tick; sum += applyTimeCoefficient(Date.now() - task.running.start, state.timeCoefficient); } return sum; }
+function taskTotalInRange(task, r0, r1, options=coefficientOptions()){ let sum = 0; for(const log of task.logs){ sum += adjustedLogOverlapMs(log, r0, r1, options); } return sum; }
+function runningOverlapInRange(r0, r1){ let sum = 0; for(const t of state.tasks){ if(isRunning(t)) sum += applyTimeCoefficient(overlapMs(t.running.start, Date.now(), r0, r1), state.timeCoefficient); } return sum; }
 
 function buildRowsForRange(startTs, endTs){
   const map = new Map();
   const clamp0 = startOfDay(new Date(startTs)).getTime();
   const clamp1 = endOfDay(new Date(endTs)).getTime();
   for(const t of state.tasks){
-    for(const log of t.logs){ const ov = overlapMs(log.start, log.end, clamp0, clamp1); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(log.start, log.end, clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += applyTimeCoefficient(ov, state.timeCoefficient); map.set(key, cur); } }
+    for(const log of t.logs){ const ov = adjustedLogOverlapMs(log, clamp0, clamp1, coefficientOptions()); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(log.start, log.end, clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += ov; map.set(key, cur); } }
     if(isRunning(t)){ const ov = overlapMs(t.running.start, Date.now(), clamp0, clamp1); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(t.running.start, Date.now(), clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += applyTimeCoefficient(ov, state.timeCoefficient); map.set(key, cur); } }
   }
   const rows = Array.from(map.values()).sort((a,b)=> (a.date<b.date?-1:a.date>b.date?1: (a.title.localeCompare(b.title))));
@@ -394,9 +407,8 @@ function buildTaskTotalsForRange(startTs, endTs){
   const clamp1 = endOfDay(new Date(endTs)).getTime();
   const rows = [];
   for(const t of state.tasks){
-    let ms = taskTotalInRange(t, clamp0, clamp1);
-    if(isRunning(t)) ms += overlapMs(t.running.start, Date.now(), clamp0, clamp1);
-    ms = applyTimeCoefficient(ms, state.timeCoefficient);
+    let ms = taskTotalInRange(t, clamp0, clamp1, coefficientOptions());
+    if(isRunning(t)) ms += applyTimeCoefficient(overlapMs(t.running.start, Date.now(), clamp0, clamp1), state.timeCoefficient);
     if(ms>0) rows.push({ title: t.title||'', link: t.link||'', project: t.project||'', type: t.type||'', ms });
   }
   return rows.sort((a,b)=> a.title.localeCompare(b.title));
@@ -496,6 +508,15 @@ function loadTimeCoefficient(){
   }
 }
 
+function loadTimeCoefficientAppliesToAll(){
+  if (typeof window === 'undefined') return false;
+  try{
+    return window.localStorage.getItem(TIME_COEFFICIENT_APPLIES_TO_ALL_STORAGE_KEY) === 'true';
+  }catch(e){
+    return false;
+  }
+}
+
 function loadHourlyRate(){
   if (typeof window === 'undefined') return 0;
   try{
@@ -512,6 +533,10 @@ watch(()=>state.timeCoefficient, (value) => {
   state.timeCoefficient = normalizeTimeCoefficient(value);
   try{ window.localStorage.setItem(TIME_COEFFICIENT_STORAGE_KEY, String(state.timeCoefficient)); }catch(e){ /* noop */ }
 });
+watch(()=>state.timeCoefficientAppliesToAll, (value) => {
+  state.timeCoefficientAppliesToAll = Boolean(value);
+  try{ window.localStorage.setItem(TIME_COEFFICIENT_APPLIES_TO_ALL_STORAGE_KEY, String(state.timeCoefficientAppliesToAll)); }catch(e){ /* noop */ }
+});
 watch(()=>state.hourlyRate, (value) => {
   state.hourlyRate = normalizeHourlyRate(value);
   try{ window.localStorage.setItem(HOURLY_RATE_STORAGE_KEY, String(state.hourlyRate)); }catch(e){ /* noop */ }
@@ -519,7 +544,7 @@ watch(()=>state.hourlyRate, (value) => {
 onMounted(()=>{ load(); });
 
 // expose to template
-const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, timeCoefficient, hourlyRate, tick } = toRefs(state);
+const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, timeCoefficient, timeCoefficientAppliesToAll, hourlyRate, tick } = toRefs(state);
 
 // ---- Browser title: show running timer HH:MM ----
 const defaultTitle = document.title;
