@@ -3,9 +3,7 @@
     <HeaderBar
       :has-tasks="tasks.length > 0"
       @create-seed="createSeed"
-      @clear-all="clearAll"
-      @export-data="exportData"
-      @open-export-range="openExportModal"
+      @open-settings="openSettingsModal"
     />
 
     <Metrics
@@ -13,6 +11,7 @@
       :tasks="tasks"
       :running-count="runningCount"
       :tick="tick"
+      :time-coefficient="timeCoefficient"
       @toggle-active-task="onToggleActiveTask"
     />
 
@@ -21,7 +20,17 @@
       v-model:exportStartStr="exportStartStr"
       v-model:exportEndStr="exportEndStr"
       :tasks="tasks"
+      :time-coefficient="timeCoefficient"
       @close="closeExportModal"
+    />
+
+    <SettingsModal
+      v-if="isSettingsModalOpen"
+      v-model:timeCoefficient="timeCoefficient"
+      @close="closeSettingsModal"
+      @open-export-range="openExportModalFromSettings"
+      @export-data="exportDataFromSettings"
+      @clear-all="clearAllFromSettings"
     />
 
     <div class="hr"></div>
@@ -63,6 +72,7 @@
         :all-tasks="tasks"
         :disable-animation="suppressTaskAnimation"
         :tick="tick"
+        :time-coefficient="timeCoefficient"
         @remove-task="onRemoveTask"
       />
     </template>
@@ -72,6 +82,7 @@
       :entries="entriesForSelectedDate"
       :date-str="entriesDateStr"
       :total-ms="entriesTotalForSelectedDate"
+      :time-coefficient="timeCoefficient"
       @update-date="onEntriesDateChange"
       @update-entry="onUpdateEntry"
       @remove-entry="onRemoveEntry"
@@ -82,6 +93,7 @@
       :tasks="tasks"
       :today="today"
       :tick="tick"
+      :time-coefficient="timeCoefficient"
       @create-entry="onCreateEntry"
     />
   </div>
@@ -92,6 +104,7 @@ import { reactive, computed, watch, onMounted, toRefs, ref, nextTick } from 'vue
 import HeaderBar from './components/HeaderBar.vue';
 import Metrics from './components/Metrics.vue';
 import Export from './components/Export.vue';
+import SettingsModal from './components/SettingsModal.vue';
 import NewTaskForm from './components/NewTaskForm.vue';
 import TabsBar from './components/TabsBar.vue';
 import TasksTable from './components/TasksTable.vue';
@@ -113,8 +126,12 @@ import {
   toISODate,
   midpointWithin,
   isRunning,
+  normalizeTimeCoefficient,
+  applyTimeCoefficient,
 } from './helpers';
 import { saveTasksToDb, loadTasksFromDb, clearTasksInDb } from './storage/tasksStore';
+
+const TIME_COEFFICIENT_STORAGE_KEY = 'time-tracker.timeCoefficient';
 
 const state = reactive({
   tasks: [],
@@ -123,10 +140,12 @@ const state = reactive({
   exportStartStr: toInputDate(firstDayOfMonth(new Date())),
   exportEndStr: toInputDate(new Date()),
   entriesDateStr: toInputDate(new Date()),
+  timeCoefficient: loadTimeCoefficient(),
   tick: 0,
 });
 
 const isExportModalOpen = ref(false);
+const isSettingsModalOpen = ref(false);
 const hasLoadedTasks = ref(false);
 
 const today = ref(new Date());
@@ -216,6 +235,29 @@ function openExportModal() {
 
 function closeExportModal() {
   isExportModalOpen.value = false;
+}
+
+function openSettingsModal() {
+  isSettingsModalOpen.value = true;
+}
+
+function closeSettingsModal() {
+  isSettingsModalOpen.value = false;
+}
+
+function openExportModalFromSettings() {
+  closeSettingsModal();
+  openExportModal();
+}
+
+function exportDataFromSettings() {
+  exportData();
+  closeSettingsModal();
+}
+
+async function clearAllFromSettings() {
+  const cleared = await clearAll();
+  if (cleared) closeSettingsModal();
 }
 
 function setSection(nextSection) {
@@ -320,11 +362,11 @@ function onToggleActiveTask(payload){
   if(isRunning(task)) stop(task); else start(task);
 }
 
-function totalForDate(dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, d0, d1); } return sum + runningOverlapInRange(d0, d1); }
-function totalForMonth(monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, m0, m1); } return sum + runningOverlapInRange(m0, m1); }
-function totalForTaskOnDate(task, dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); const now = Date.now(); state.tick; return taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, now, d0, d1) : 0); }
-function totalForTaskInMonth(task, monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); return taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), m0, m1) : 0); }
-function totalForTaskOverall(task){ let sum = 0; for(const log of task.logs){ sum += (typeof log.ms === 'number') ? log.ms : Math.max(0, (log.end||0) - (log.start||0)); } if(isRunning(task)){ state.tick; sum += Date.now() - task.running.start; } return sum; }
+function totalForDate(dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, d0, d1); } return applyTimeCoefficient(sum + runningOverlapInRange(d0, d1), state.timeCoefficient); }
+function totalForMonth(monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); let sum = 0; for(const t of state.tasks){ sum += taskTotalInRange(t, m0, m1); } return applyTimeCoefficient(sum + runningOverlapInRange(m0, m1), state.timeCoefficient); }
+function totalForTaskOnDate(task, dateObj){ const d0 = startOfDay(dateObj).getTime(); const d1 = endOfDay(dateObj).getTime(); const now = Date.now(); state.tick; return applyTimeCoefficient(taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, now, d0, d1) : 0), state.timeCoefficient); }
+function totalForTaskInMonth(task, monthDate){ const m0 = firstDayOfMonth(monthDate).getTime(); const m1 = lastDayOfMonth(monthDate).getTime(); return applyTimeCoefficient(taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, Date.now(), m0, m1) : 0), state.timeCoefficient); }
+function totalForTaskOverall(task){ let sum = 0; for(const log of task.logs){ sum += (typeof log.ms === 'number') ? log.ms : Math.max(0, (log.end||0) - (log.start||0)); } if(isRunning(task)){ state.tick; sum += Date.now() - task.running.start; } return applyTimeCoefficient(sum, state.timeCoefficient); }
 function taskTotalInRange(task, r0, r1){ let sum = 0; for(const log of task.logs){ sum += overlapMs(log.start, log.end, r0, r1); } return sum; }
 function runningOverlapInRange(r0, r1){ let sum = 0; for(const t of state.tasks){ if(isRunning(t)) sum += overlapMs(t.running.start, Date.now(), r0, r1); } return sum; }
 
@@ -333,8 +375,8 @@ function buildRowsForRange(startTs, endTs){
   const clamp0 = startOfDay(new Date(startTs)).getTime();
   const clamp1 = endOfDay(new Date(endTs)).getTime();
   for(const t of state.tasks){
-    for(const log of t.logs){ const ov = overlapMs(log.start, log.end, clamp0, clamp1); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(log.start, log.end, clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += ov; map.set(key, cur); } }
-    if(isRunning(t)){ const ov = overlapMs(t.running.start, Date.now(), clamp0, clamp1); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(t.running.start, Date.now(), clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += ov; map.set(key, cur); } }
+    for(const log of t.logs){ const ov = overlapMs(log.start, log.end, clamp0, clamp1); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(log.start, log.end, clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += applyTimeCoefficient(ov, state.timeCoefficient); map.set(key, cur); } }
+    if(isRunning(t)){ const ov = overlapMs(t.running.start, Date.now(), clamp0, clamp1); if(ov>0){ const dayKey = toISODate(new Date(midpointWithin(t.running.start, Date.now(), clamp0, clamp1))); const key = `${dayKey}__${t.id}`; const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0}; cur.ms += applyTimeCoefficient(ov, state.timeCoefficient); map.set(key, cur); } }
   }
   const rows = Array.from(map.values()).sort((a,b)=> (a.date<b.date?-1:a.date>b.date?1: (a.title.localeCompare(b.title))));
   return rows;
@@ -346,6 +388,7 @@ function buildTaskTotalsForRange(startTs, endTs){
   for(const t of state.tasks){
     let ms = taskTotalInRange(t, clamp0, clamp1);
     if(isRunning(t)) ms += overlapMs(t.running.start, Date.now(), clamp0, clamp1);
+    ms = applyTimeCoefficient(ms, state.timeCoefficient);
     if(ms>0) rows.push({ title: t.title||'', link: t.link||'', project: t.project||'', type: t.type||'', ms });
   }
   return rows.sort((a,b)=> a.title.localeCompare(b.title));
@@ -392,15 +435,16 @@ async function load(){
 }
 function createSeed(){ if(!confirm('Додати кілька демо-задач?')) return; const now = Date.now(); const p = (title, project, type) => ({ id: cryptoRandomId(), title, link:'', project, type, archived:false, persistent:false, logs:[], running:null, createdAt: now }); const a = p('TB: виправити помилку ACF','Traffic Bureau','dev'); const b = p('Planka: валідація форм','Internal','dev'); const c = p('Рефакторинг таблиць','Mezha','frontend'); const lastM = prevMonth(new Date()); const lastMStart = firstDayOfMonth(lastM).getTime(); const day1 = lastMStart + 3*86400000 + 9*3600000; const day2 = lastMStart + 10*86400000 + 14*3600000; a.logs.push({id:cryptoRandomId(), start:day1, end: day1+2*3600000, ms:2*3600000}); b.logs.push({id:cryptoRandomId(), start:day2, end: day2+90*60000, ms:90*60000}); const today = new Date(); today.setHours(10,0,0,0); const todayStart = today.getTime(); c.logs.push({id:cryptoRandomId(), start:todayStart, end: todayStart+75*60000, ms:75*60000}); state.tasks.unshift(a,b,c); save(); }
 async function clearAll(){
-  if(!confirm('Очистити всі локальні дані?')) return;
+  if(!confirm('Очистити всі локальні дані?')) return false;
   try{
     await clearTasksInDb();
   }catch(e){
     console.warn('Clear failed', e);
     alert('Не вдалося очистити локальні дані. Перевірте дозволи браузера.');
-    return;
+    return false;
   }
   state.tasks=[];
+  return true;
 }
 function exportData(){
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -434,12 +478,26 @@ function cloneTasks(tasks){
   }
 }
 
+function loadTimeCoefficient(){
+  if (typeof window === 'undefined') return 1;
+  try{
+    const raw = window.localStorage.getItem(TIME_COEFFICIENT_STORAGE_KEY);
+    return raw === null ? 1 : normalizeTimeCoefficient(raw);
+  }catch(e){
+    return 1;
+  }
+}
+
 setInterval(()=> state.tick++, 1000);
 watch(()=>state.tasks, save, {deep:true});
+watch(()=>state.timeCoefficient, (value) => {
+  state.timeCoefficient = normalizeTimeCoefficient(value);
+  try{ window.localStorage.setItem(TIME_COEFFICIENT_STORAGE_KEY, String(state.timeCoefficient)); }catch(e){ /* noop */ }
+});
 onMounted(()=>{ load(); });
 
 // expose to template
-const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, tick } = toRefs(state);
+const { tasks, tab, section, exportStartStr, exportEndStr, entriesDateStr, timeCoefficient, tick } = toRefs(state);
 
 // ---- Browser title: show running timer HH:MM ----
 const defaultTitle = document.title;
@@ -471,10 +529,10 @@ watch(runningCount, (count) => {
 }, { immediate: true });
 
 const runningTask = computed(()=> state.tasks.find(t=> !!t.running) || null);
-function formatHm(ms){ ms = Math.max(0, ms|0); const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+function formatHm(ms){ ms = Math.max(0, Math.trunc(ms)); const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 watch([runningTask, tick], ()=>{
   const rt = runningTask.value;
-  if(rt && rt.running){ document.title = formatHm(Date.now() - rt.running.start); }
+  if(rt && rt.running){ document.title = formatHm(applyTimeCoefficient(Date.now() - rt.running.start, state.timeCoefficient)); }
   else { document.title = defaultTitle; }
 }, { immediate: true });
 </script>

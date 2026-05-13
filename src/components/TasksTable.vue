@@ -129,9 +129,9 @@
                         <div class="nowrap">За увесь час</div>
                     </div>
                     <div class="row grid">
-                        <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs)) }}</div>
-                        <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, todayDate, nowTs)) }}</div>
-                        <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskOnDate(task, todayDate, nowTs, timeCoefficient)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskInMonth(task, todayDate, nowTs, timeCoefficient)) }}</div>
+                        <div class="mono nowrap">{{ formatMsS(totalForTaskOverall(task, nowTs, timeCoefficient)) }}</div>
                     </div>
                 </div>
             </TransitionGroup>
@@ -155,7 +155,8 @@ const props = defineProps({
     filteredTasks: { type: Array, required: true },
     allTasks: { type: Array },
     disableAnimation: { type: Boolean, default: false },
-    tick: { type: Number, default: 0 }
+    tick: { type: Number, default: 0 },
+    timeCoefficient: { type: Number, default: 1 }
 });
 
 const emit = defineEmits(['remove-task']);

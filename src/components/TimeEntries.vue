@@ -71,7 +71,7 @@
           </div>
           <div class="time-entry__field">
             <span class="label">Тривалість</span>
-            <span class="mono">{{ formatMs(entry.ms) }}</span>
+            <span class="mono">{{ formatMs(applyTimeCoefficient(entry.ms, timeCoefficient)) }}</span>
           </div>
         </div>
       </div>
@@ -82,12 +82,13 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { formatMs, toInputDate } from '../helpers';
+import { applyTimeCoefficient, formatMs, toInputDate } from '../helpers';
 
 const props = defineProps({
   entries: { type: Array, default: () => [] },
   dateStr: { type: String, default: '' },
   totalMs: { type: Number, default: 0 },
+  timeCoefficient: { type: Number, default: 1 },
 });
 
 const emit = defineEmits(['update-date', 'update-entry', 'remove-entry']);

@@ -28,12 +28,12 @@ export function monthLabel(d){ return d.toLocaleDateString('uk-UA', { month:'lon
 
 // Formatting
 export function formatMs(ms){
-  const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
+  const sign = ms<0?'-':''; ms = Math.trunc(Math.abs(ms));
   const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
   return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
 }
 export function formatMsS(ms){
-  const sign = ms<0?'-':''; ms = Math.abs(ms)|0;
+  const sign = ms<0?'-':''; ms = Math.trunc(Math.abs(ms));
   const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
   return sign + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
@@ -42,6 +42,13 @@ export function formatMsS(ms){
 export function overlapMs(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return Math.max(0, e-s); }
 export function midpointWithin(a0,a1,b0,b1){ const s=Math.max(a0,b0), e=Math.min(a1,b1); return s + Math.floor((e-s)/2); }
 export function isRunning(task){ return !!task.running; }
+export function normalizeTimeCoefficient(value){
+  const parsed = Number.parseFloat(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1;
+}
+export function applyTimeCoefficient(ms, coefficient=1){
+  return ms * normalizeTimeCoefficient(coefficient);
+}
 
 // Totals
 export function taskTotalInRange(task, r0, r1){
@@ -54,39 +61,39 @@ export function runningOverlapInRange(tasks, r0, r1){
   for(const t of tasks){ if(isRunning(t)) sum += overlapMs(t.running.start, Date.now(), r0, r1); }
   return sum;
 }
-export function totalForDate(tasks, dateObj){
+export function totalForDate(tasks, dateObj, coefficient=1){
   const d0 = startOfDay(dateObj).getTime();
   const d1 = endOfDay(dateObj).getTime();
   let sum = 0; for(const t of tasks){ sum += taskTotalInRange(t, d0, d1); }
-  return sum + runningOverlapInRange(tasks, d0, d1);
+  return applyTimeCoefficient(sum + runningOverlapInRange(tasks, d0, d1), coefficient);
 }
-export function totalForMonth(tasks, monthDate){
+export function totalForMonth(tasks, monthDate, coefficient=1){
   const m0 = firstDayOfMonth(monthDate).getTime();
   const m1 = lastDayOfMonth(monthDate).getTime();
   let sum = 0; for(const t of tasks){ sum += taskTotalInRange(t, m0, m1); }
-  return sum + runningOverlapInRange(tasks, m0, m1);
+  return applyTimeCoefficient(sum + runningOverlapInRange(tasks, m0, m1), coefficient);
 }
-export function totalForTaskOnDate(task, dateObj, nowTs=Date.now()){
+export function totalForTaskOnDate(task, dateObj, nowTs=Date.now(), coefficient=1){
   const d0 = startOfDay(dateObj).getTime();
   const d1 = endOfDay(dateObj).getTime();
-  return taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, nowTs, d0, d1) : 0);
+  return applyTimeCoefficient(taskTotalInRange(task, d0, d1) + (isRunning(task) ? overlapMs(task.running.start, nowTs, d0, d1) : 0), coefficient);
 }
-export function totalForTaskInMonth(task, monthDate, nowTs=Date.now()){
+export function totalForTaskInMonth(task, monthDate, nowTs=Date.now(), coefficient=1){
   const m0 = firstDayOfMonth(monthDate).getTime();
   const m1 = lastDayOfMonth(monthDate).getTime();
-  return taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, nowTs, m0, m1) : 0);
+  return applyTimeCoefficient(taskTotalInRange(task, m0, m1) + (isRunning(task) ? overlapMs(task.running.start, nowTs, m0, m1) : 0), coefficient);
 }
-export function totalForTaskOverall(task, nowTs=Date.now()){
+export function totalForTaskOverall(task, nowTs=Date.now(), coefficient=1){
   let sum = 0;
   for(const log of task.logs){
     sum += (typeof log.ms === 'number') ? log.ms : Math.max(0, (log.end||0) - (log.start||0));
   }
   if(isRunning(task)) sum += nowTs - task.running.start;
-  return sum;
+  return applyTimeCoefficient(sum, coefficient);
 }
 
 // Export builders
-export function buildRowsForRange(tasks, startTs, endTs, nowTs=Date.now()){
+export function buildRowsForRange(tasks, startTs, endTs, nowTs=Date.now(), coefficient=1){
   const map = new Map();
   const clamp0 = startOfDay(new Date(startTs)).getTime();
   const clamp1 = endOfDay(new Date(endTs)).getTime();
@@ -97,7 +104,7 @@ export function buildRowsForRange(tasks, startTs, endTs, nowTs=Date.now()){
         const dayKey = toISODate(new Date(midpointWithin(log.start, log.end, clamp0, clamp1)));
         const key = `${dayKey}__${t.id}`;
         const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0};
-        cur.ms += ov; map.set(key, cur);
+        cur.ms += applyTimeCoefficient(ov, coefficient); map.set(key, cur);
       }
     }
     if(isRunning(t)){
@@ -106,20 +113,21 @@ export function buildRowsForRange(tasks, startTs, endTs, nowTs=Date.now()){
         const dayKey = toISODate(new Date(midpointWithin(t.running.start, nowTs, clamp0, clamp1)));
         const key = `${dayKey}__${t.id}`;
         const cur = map.get(key) || {date: dayKey, title: t.title, project: t.project||'', type: t.type||'', link: t.link||'', ms:0};
-        cur.ms += ov; map.set(key, cur);
+        cur.ms += applyTimeCoefficient(ov, coefficient); map.set(key, cur);
       }
     }
   }
   return Array.from(map.values()).sort((a,b)=> (a.date<b.date?-1:a.date>b.date?1: (a.title.localeCompare(b.title))));
 }
 
-export function buildTaskTotalsForRange(tasks, startTs, endTs, nowTs=Date.now()){
+export function buildTaskTotalsForRange(tasks, startTs, endTs, nowTs=Date.now(), coefficient=1){
   const clamp0 = startOfDay(new Date(startTs)).getTime();
   const clamp1 = endOfDay(new Date(endTs)).getTime();
   const rows = [];
   for(const t of tasks){
     let ms = taskTotalInRange(t, clamp0, clamp1);
     if(isRunning(t)) ms += overlapMs(t.running.start, nowTs, clamp0, clamp1);
+    ms = applyTimeCoefficient(ms, coefficient);
     if(ms>0) rows.push({ title: t.title||'', link: t.link||'', project: t.project||'', type: t.type||'', ms });
   }
   return rows.sort((a,b)=> a.title.localeCompare(b.title));

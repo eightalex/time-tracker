@@ -31,6 +31,7 @@ import {
     PhChartLineUp,
     PhUploadSimple,
     PhDownloadSimple,
+    PhGear,
 } from '@phosphor-icons/vue';
 
 const ICONS = {
@@ -52,6 +53,7 @@ const ICONS = {
     chart: PhChartLineUp,
     upload: PhUploadSimple,
     download: PhDownloadSimple,
+    gear: PhGear,
 };
 
 const props = defineProps({

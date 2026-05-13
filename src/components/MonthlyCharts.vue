@@ -189,6 +189,7 @@ import {
   toInputMonth,
   monthLabel,
   formatMs,
+  applyTimeCoefficient,
   startOfDay,
 } from '../helpers';
 import Icon from './Icon.vue';
@@ -209,6 +210,7 @@ const props = defineProps({
   tasks: { type: Array, default: () => [] },
   today: { type: Object, default: () => new Date() },
   tick: { type: Number, default: 0 },
+  timeCoefficient: { type: Number, default: 1 },
 });
 
 const emit = defineEmits(['create-entry']);
@@ -262,7 +264,7 @@ const monthTitle = computed(() => monthLabel(monthDate.value));
 
 const rawDays = computed(() => {
   props.tick;
-  return buildMonthlyDays(props.tasks, monthDate.value);
+  return buildMonthlyDays(props.tasks, monthDate.value, props.timeCoefficient);
 });
 
 const maxTotalMs = computed(() => {
@@ -641,7 +643,7 @@ function mergeIntervals(intervals) {
   return merged;
 }
 
-function buildMonthlyDays(tasks, monthStartDate) {
+function buildMonthlyDays(tasks, monthStartDate, coefficient=1) {
   const start = firstDayOfMonth(monthStartDate).getTime();
   const endInclusive = lastDayOfMonth(monthStartDate).getTime();
   const endExclusive = endInclusive + 1;
@@ -669,7 +671,7 @@ function buildMonthlyDays(tasks, monthStartDate) {
       const dayStart = startOfDay(new Date(cursor)).getTime();
       const nextDayStart = dayStart + DAY_MS;
       const sliceEnd = Math.min(nextDayStart, clampedEnd);
-      const delta = Math.max(0, sliceEnd - cursor);
+      const delta = applyTimeCoefficient(Math.max(0, sliceEnd - cursor), coefficient);
       if (delta > 0) {
         const entry = ensureEntry(dayStart);
         entry.totalMs += delta;

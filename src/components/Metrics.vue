@@ -32,13 +32,14 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import Icon from './Icon.vue';
-import { formatMs, formatMsS, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
+import { applyTimeCoefficient, formatMs, formatMsS, toISODate, monthLabel, isRunning, totalForDate, totalForMonth } from '../helpers';
 
 const props = defineProps({
   today: { type: Date, required: true },
   tasks: { type: Array, required: true },
   runningCount: { type: Number, required: true },
   tick: { type: Number, default: 0 },
+  timeCoefficient: { type: Number, default: 1 },
 });
 
 const emit = defineEmits(['toggle-active-task']);
@@ -46,8 +47,8 @@ const emit = defineEmits(['toggle-active-task']);
 const currentMonthDate = computed(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
 
 // Live totals (depend on tick so running timers update)
-const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today); });
-const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value); });
+const todayTotal = computed(() => { props.tick; return totalForDate(props.tasks, props.today, props.timeCoefficient); });
+const monthTotal = computed(() => { props.tick; return totalForMonth(props.tasks, currentMonthDate.value, props.timeCoefficient); });
 
 const lastKnownTask = ref(null);
 
@@ -117,9 +118,9 @@ const activeTaskTime = computed(() => {
   const task = lastKnownTask.value;
   if (!task) return '00:00:00';
   if (task.isRunning) {
-    return formatMsS(Math.max(0, Date.now() - task.start));
+    return formatMsS(applyTimeCoefficient(Math.max(0, Date.now() - task.start), props.timeCoefficient));
   }
-  return formatMsS(task.duration ?? 0);
+  return formatMsS(applyTimeCoefficient(task.duration ?? 0, props.timeCoefficient));
 });
 
 const activeToggleIcon = computed(() => (lastKnownTask.value?.isRunning ? 'pause' : 'play'));
