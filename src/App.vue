@@ -92,6 +92,7 @@
       :time-coefficient="timeCoefficient"
       :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
       :hourly-rate="hourlyRate"
+      :highlight-log-id="highlightLogId"
       @update-date="onEntriesDateChange"
       @update-entry="onUpdateEntry"
       @remove-entry="onRemoveEntry"
@@ -106,6 +107,7 @@
       :time-coefficient-applies-to-all="timeCoefficientAppliesToAll"
       :hourly-rate="hourlyRate"
       @create-entry="onCreateEntry"
+      @view-day-entries="onViewDayEntries"
     />
   </div>
 </template>
@@ -165,6 +167,7 @@ const state = reactive({
 const isExportModalOpen = ref(false);
 const isSettingsModalOpen = ref(false);
 const hasLoadedTasks = ref(false);
+const highlightLogId = ref('');
 
 const today = ref(new Date());
 const suppressTaskAnimation = ref(false);
@@ -281,10 +284,21 @@ async function clearAllFromSettings() {
 
 function setSection(nextSection) {
   state.section = nextSection;
+  if (nextSection !== 'entries') {
+    highlightLogId.value = '';
+  }
+}
+
+function onViewDayEntries(payload) {
+  if (!payload || typeof payload.dateStr !== 'string') return;
+  state.entriesDateStr = payload.dateStr;
+  highlightLogId.value = typeof payload.logId === 'string' ? payload.logId : '';
+  state.section = 'entries';
 }
 
 function onEntriesDateChange(value) {
   state.entriesDateStr = value || toInputDate(new Date());
+  highlightLogId.value = '';
 }
 
 function onUpdateEntry(payload) {

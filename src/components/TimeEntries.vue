@@ -13,7 +13,12 @@
     </div>
 
     <div v-if="entries.length" class="time-entries__list">
-      <div v-for="entry in reversedEntries" :key="entry.logId" class="time-entry">
+      <div
+        v-for="entry in reversedEntries"
+        :key="entry.logId"
+        :ref="(el) => registerEntryEl(entry.logId, el)"
+        :class="['time-entry', { 'is-highlighted': highlightLogId === entry.logId }]"
+      >
         <div class="time-entry__header">
           <div class="time-entry__title">
             {{ entry.taskTitle || 'Без назви' }}
@@ -88,7 +93,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { adjustedLogMs, earnedForMs, formatMs, formatUsd, shouldShowEarnings, toInputDate } from '../helpers';
 
 const props = defineProps({
@@ -98,12 +103,35 @@ const props = defineProps({
   timeCoefficient: { type: Number, default: 1 },
   timeCoefficientAppliesToAll: { type: Boolean, default: false },
   hourlyRate: { type: Number, default: 0 },
+  highlightLogId: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update-date', 'update-entry', 'remove-entry']);
 
 const editingId = ref(null);
 const draft = reactive({ start: '', end: '' });
+const entryEls = new Map();
+
+function registerEntryEl(logId, el) {
+  if (el) {
+    entryEls.set(logId, el);
+  } else {
+    entryEls.delete(logId);
+  }
+}
+
+watch(
+  () => props.highlightLogId,
+  async (logId) => {
+    if (!logId) return;
+    await nextTick();
+    const el = entryEls.get(logId);
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  },
+  { immediate: true }
+);
 
 const modelDate = computed({
   get: () => props.dateStr,
@@ -233,6 +261,11 @@ watch(
   padding: 14px 16px;
   background-color: var(--input-bg);
   border-radius: 12px;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+.time-entry.is-highlighted {
+  background-color: color-mix(in srgb, var(--accent, #2563eb) 18%, var(--input-bg));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #2563eb) 55%, transparent);
 }
 .time-entry__header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;}
 .time-entry__title{font-weight:600;}

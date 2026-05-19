@@ -67,7 +67,7 @@
                 :title="segment.tooltip"
                 @mouseenter="setHoveredTask(segment.id)"
                 @mouseleave="clearHoveredTask(segment.id)"
-                @click="toggleLegend(segment.id)"
+                @click="onSegmentClick(day, segment)"
               ></div>
             </div>
             <div v-else class="chart-grid__bar chart-grid__bar--empty" aria-hidden="true"></div>
@@ -176,24 +176,46 @@
     </div>
 
     <div v-if="legend.length" class="monthly-chart__legend">
-      <div
-        v-for="item in legend"
-        :key="item.id"
-        class="legend-item"
-        :class="legendClasses(item.id)"
-        role="button"
-        tabindex="0"
-        @click="toggleLegend(item.id)"
-        @keydown.enter.prevent="toggleLegend(item.id)"
-        @keydown.space.prevent="toggleLegend(item.id)"
-        @mouseenter="setHoveredTask(item.id)"
-        @mouseleave="clearHoveredTask(item.id)"
-      >
-        <span class="legend-item__swatch" :style="{ backgroundColor: item.color }"></span>
-        <span class="legend-item__title">{{ item.title }}</span>
-        <span class="legend-item__value mono">{{ item.hours }}</span>
-        <span v-if="showEarnings" class="legend-item__money mono">{{ item.earned }}</span>
-      </div>
+      <template v-for="item in legend" :key="item.id">
+        <div
+          class="legend-item"
+          :class="legendClasses(item.id)"
+          role="button"
+          tabindex="0"
+          @click="toggleLegend(item.id)"
+          @keydown.enter.prevent="toggleLegend(item.id)"
+          @keydown.space.prevent="toggleLegend(item.id)"
+          @mouseenter="setHoveredTask(item.id)"
+          @mouseleave="clearHoveredTask(item.id)"
+        >
+          <span class="legend-item__swatch" :style="{ backgroundColor: item.color }"></span>
+          <span class="legend-item__title">{{ item.title }}</span>
+          <span class="legend-item__value mono">{{ item.hours }}</span>
+          <span v-if="showEarnings" class="legend-item__money mono">{{ item.earned }}</span>
+        </div>
+        <div
+          v-if="activeTaskId === item.id"
+          class="legend-item__entries"
+        >
+          <button
+            v-for="entry in entriesByTaskId.get(item.id) || []"
+            :key="entry.logId"
+            type="button"
+            class="legend-item__entry"
+            @click="onEntryClick(entry)"
+          >
+            <span class="legend-item__entry-date">{{ entry.dateLabel }}</span>
+            <span class="legend-item__entry-time mono">{{ entry.timeLabel }}</span>
+            <span class="legend-item__entry-duration mono">{{ entry.durationLabel }}</span>
+          </button>
+          <p
+            v-if="!(entriesByTaskId.get(item.id) || []).length"
+            class="legend-item__entries-empty"
+          >
+            Немає записів за цей місяць.
+          </p>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -237,7 +259,7 @@ const props = defineProps({
   hourlyRate: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(['create-entry']);
+const emit = defineEmits(['create-entry', 'view-day-entries']);
 
 const selectedMonth = ref('');
 const activeTaskId = ref(null);
@@ -255,6 +277,16 @@ const longDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
+});
+
+const entryDateFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  month: 'short',
+});
+
+const entryTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  hour: '2-digit',
+  minute: '2-digit',
 });
 
 watch(
@@ -794,6 +826,49 @@ function toggleLegend(taskId) {
   hoveredTaskId.value = taskId;
 }
 
+const entriesByTaskId = computed(() => {
+  const monthStart = firstDayOfMonth(monthDate.value).getTime();
+  const monthEnd = lastDayOfMonth(monthDate.value).getTime();
+  const map = new Map();
+  for (const task of Array.isArray(props.tasks) ? props.tasks : []) {
+    const rows = [];
+    const logs = Array.isArray(task.logs) ? task.logs : [];
+    for (const log of logs) {
+      const startTs = typeof log.start === 'number' ? log.start : null;
+      const endTs = typeof log.end === 'number' ? log.end : null;
+      if (startTs === null || endTs === null) continue;
+      if (endTs < monthStart || startTs > monthEnd) continue;
+      const ms = typeof log.ms === 'number' ? log.ms : Math.max(0, endTs - startTs);
+      const startDate = new Date(startTs);
+      const endDate = new Date(endTs);
+      rows.push({
+        taskId: task.id,
+        logId: log.id,
+        start: startTs,
+        end: endTs,
+        ms,
+        dateStr: formatDateKey(startTs),
+        dateLabel: entryDateFormatter.format(startDate),
+        timeLabel: `${entryTimeFormatter.format(startDate)} – ${entryTimeFormatter.format(endDate)}`,
+        durationLabel: formatMs(ms),
+      });
+    }
+    rows.sort((a, b) => a.start - b.start);
+    map.set(task.id, rows);
+  }
+  return map;
+});
+
+function onSegmentClick(day, segment) {
+  if (!day?.date) return;
+  emit('view-day-entries', { dateStr: day.date, taskId: segment?.id || null });
+}
+
+function onEntryClick(entry) {
+  if (!entry?.dateStr) return;
+  emit('view-day-entries', { dateStr: entry.dateStr, logId: entry.logId });
+}
+
 function setHoveredTask(taskId) {
   hoveredTaskId.value = taskId;
 }
@@ -1245,6 +1320,61 @@ function legendClasses(taskId) {
 
 .legend-item.is-faded {
   opacity: 0.45;
+}
+
+.legend-item__entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -2px 0 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--input-bg) 60%, transparent);
+  border: 1px solid var(--line);
+}
+
+.legend-item__entry {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.legend-item__entry:hover,
+.legend-item__entry:focus-visible {
+  background: color-mix(in srgb, var(--accent, #2563eb) 12%, transparent);
+  outline: none;
+}
+
+.legend-item__entry-date {
+  color: var(--sub);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.legend-item__entry-time {
+  font-size: 13px;
+}
+
+.legend-item__entry-duration {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.legend-item__entries-empty {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--sub);
 }
 
 @media (max-width: 720px) {
