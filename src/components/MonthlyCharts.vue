@@ -156,7 +156,19 @@
         </p>
 
         <div class="monthly-chart__composer-actions">
-          <button type="button" class="btn ghost" @click="resetComposerTimes">Розумний слот</button>
+          <div class="monthly-chart__smart-slot">
+            <button
+              type="button"
+              class="btn ghost"
+              @click="resetComposerTimes"
+            >Розумний слот</button>
+            <p class="monthly-chart__smart-slot-hint">
+              <span class="monthly-chart__smart-slot-hint-icon" aria-hidden="true">💡</span>
+              <span class="monthly-chart__smart-slot-hint-text">
+                Автоматично підбирає час: за порожній день — 10:00, інакше ставить запис одразу після останнього або у найбільше вільне вікно дня.
+              </span>
+            </p>
+          </div>
           <button type="button" class="btn ghost" @click="closeComposer">Скасувати</button>
           <button type="submit" class="btn primary" :disabled="!canSubmitComposer">Додати запис</button>
         </div>
@@ -213,6 +225,7 @@ const durationPresets = [
   { label: '1.5 год', ms: 90 * MINUTE_MS },
   { label: '2 год', ms: 120 * MINUTE_MS },
   { label: '4 год', ms: 240 * MINUTE_MS },
+  { label: '8 год', ms: 480 * MINUTE_MS },
 ];
 
 const props = defineProps({
@@ -412,7 +425,8 @@ function parseMonth(value) {
 
 function formatTaskOption(task) {
   const meta = [task.project, task.type].filter(Boolean).join(' / ');
-  return meta ? `${task.title} · ${meta}` : task.title || 'Без назви';
+  const base = meta ? `${task.title} · ${meta}` : task.title || 'Без назви';
+  return task.persistent ? `📌 [постійна] ${base}` : base;
 }
 
 function openComposer(day) {
@@ -535,8 +549,8 @@ function suggestTimeRange(dateStr) {
   const dayStartTs = startOfDay(new Date(`${dateStr}T00:00:00`)).getTime();
   if (Number.isNaN(dayStartTs)) {
     return {
-      startMinutes: 9 * 60,
-      endMinutes: 10 * 60,
+      startMinutes: 10 * 60,
+      endMinutes: 11 * 60,
       hint: 'Запропоновано стандартний робочий слот.',
     };
   }
@@ -544,9 +558,9 @@ function suggestTimeRange(dateStr) {
   const busyIntervals = collectBusyIntervals(dateStr);
   if (!busyIntervals.length) {
     return {
-      startMinutes: 9 * 60,
-      endMinutes: 10 * 60,
-      hint: 'День порожній, тому запропоновано стандартний слот 09:00 - 10:00.',
+      startMinutes: 10 * 60,
+      endMinutes: 11 * 60,
+      hint: 'День порожній, тому запропоновано стандартний слот 10:00 - 11:00.',
     };
   }
 
@@ -1111,8 +1125,69 @@ function legendClasses(taskId) {
 .monthly-chart__composer-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.monthly-chart__smart-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-right: auto;
+  max-width: 360px;
+}
+
+.monthly-chart__smart-slot-hint {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--sub);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.monthly-chart__smart-slot-hint::after,
+.monthly-chart__smart-slot-hint::before {
+  bottom: 100%;
+  left: 20px;
+  border: solid transparent;
+  content: "";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+}
+
+.monthly-chart__smart-slot-hint::after {
+  border-color: transparent;
+  border-bottom-color: var(--input-bg);
+  border-width: 6px;
+  margin-left: -6px;
+}
+
+.monthly-chart__smart-slot-hint::before {
+  border-color: transparent;
+  border-bottom-color: var(--line);
+  border-width: 7px;
+  margin-left: -7px;
+}
+
+.monthly-chart__smart-slot-hint-icon {
+  flex: 0 0 auto;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.monthly-chart__smart-slot-hint-text {
+  flex: 1 1 auto;
 }
 
 .monthly-chart__legend {
