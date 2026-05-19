@@ -870,7 +870,7 @@ function legendClasses(taskId) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(18px, 1fr));
   align-items: end;
-  gap: 6px;
+  gap: 3px;
   min-height: 226px;
 }
 
