@@ -328,6 +328,7 @@ const days = computed(() => {
 
 const taskOptions = computed(() => {
   return [...(Array.isArray(props.tasks) ? props.tasks : [])]
+    .filter((task) => !task.archived)
     .sort((a, b) => (a.title || '').localeCompare(b.title || '', 'uk'))
     .map((task) => ({
       id: task.id,
