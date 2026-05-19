@@ -18,9 +18,9 @@ import {
     PhClock,
     PhDotsThreeVertical,
     PhFloppyDisk,
-    PhPauseCircle,
+    PhPause,
     PhPencilSimple,
-    PhPlayCircle,
+    PhPlay,
     PhQuestion,
     PhRepeat,
     PhStar,
@@ -35,8 +35,8 @@ import {
 } from '@phosphor-icons/vue';
 
 const ICONS = {
-    play: PhPlayCircle,
-    pause: PhPauseCircle,
+    play: PhPlay,
+    pause: PhPause,
     edit: PhPencilSimple,
     save: PhFloppyDisk,
     cancel: PhXCircle,

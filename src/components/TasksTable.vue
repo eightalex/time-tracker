@@ -83,7 +83,7 @@
                                 title="Старт таймера"
                                 aria-label="Старт таймера"
                             >
-                                <Icon name="play" size="26" />
+                                <Icon name="play" size="15" />
                             </button>
                             <button
                                 class="btn panel primary primary-action"
@@ -92,7 +92,7 @@
                                 title="Зупинити таймер"
                                 aria-label="Зупинити таймер"
                             >
-                                <Icon name="pause" size="26" />
+                                <Icon name="pause" size="15" />
                             </button>
                             <div class="controls-menu">
                                 <button
@@ -533,8 +533,8 @@ const todayDate = computed(() => new Date());
     }
 
     .btn.panel.primary-action svg {
-        width: 70%;
-        height: 70%;
+        width: 50%;
+        height: 50%;
     }
 
     .btn.panel.primary-action.green svg {

@@ -18,7 +18,7 @@
           :disabled="isActiveToggleDisabled"
           @click="onToggleActive"
         >
-          <Icon :name="activeToggleIcon" size="40" />
+          <Icon :name="activeToggleIcon" size="22" />
         </button>
         <div class="metric-active__info">
           <div class="metric-active__time mono">{{ activeTaskTime }}</div>
@@ -168,8 +168,8 @@ function onToggleActive() {
 .metric--active{flex-direction:row;align-items:center;gap:16px}
 .metric-active__btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:56px;height:56px;font-size:24px;border:none;border-radius:50%}
 .metric-active__btn svg {
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
 }
 .metric-active__btn:disabled{opacity:0.45;cursor:not-allowed}
 .metric-active__info{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
