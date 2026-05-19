@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Icon from './Icon.vue';
 import {
     isRunning,
@@ -181,10 +181,31 @@ function closeMenu() {
     openMenuFor.value = null;
 }
 
+function handleOutsideClick(event) {
+    if (event.target.closest('.controls-menu')) return;
+    const openTask = props.filteredTasks.find(t => t.id === openMenuFor.value);
+    if (openTask && openTask._edit) return;
+    closeMenu();
+}
+
+watch(openMenuFor, (value) => {
+    if (value !== null) {
+        document.addEventListener('mousedown', handleOutsideClick);
+    } else {
+        document.removeEventListener('mousedown', handleOutsideClick);
+    }
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('mousedown', handleOutsideClick);
+});
+
 function handleMenuAction(action) {
     if (typeof action === 'function') {
         action();
     }
+    const openTask = props.filteredTasks.find(t => t.id === openMenuFor.value);
+    if (openTask && openTask._edit) return;
     closeMenu();
 }
 
