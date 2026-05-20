@@ -380,7 +380,6 @@ watch(
 .time-entry__footer{
   margin-top:4px;
   padding:10px 12px 6px;
-  border-top:1px solid var(--line);
   background:color-mix(in srgb, var(--surface) 80%, transparent);
   border-radius:8px;
   display:flex;
