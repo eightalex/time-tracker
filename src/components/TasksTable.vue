@@ -113,6 +113,7 @@
                                         v-for="item in menuItemsForTask(task)"
                                         :key="item.label"
                                         class="controls-menu__item"
+                                        :class="{ 'controls-menu__item--danger': item.danger }"
                                         type="button"
                                         @click="handleMenuAction(item.action)"
                                     >
@@ -267,6 +268,7 @@ function menuItemsForTask(task) {
         items.push({
             icon: 'trash',
             label: 'Видалити',
+            danger: true,
             action: () => emitRemove(task)
         });
     }
@@ -588,6 +590,14 @@ const todayDate = computed(() => new Date());
 
     .controls-menu__item:active {
         transform: translateY(1px);
+    }
+
+    .controls-menu__item--danger {
+        color: var(--danger);
+    }
+
+    .controls-menu__item--danger:hover {
+        background: color-mix(in srgb, var(--danger) 14%, transparent);
     }
 }
 

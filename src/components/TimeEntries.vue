@@ -29,37 +29,27 @@
           <div class="time-entry__title">
             {{ entry.taskTitle || 'Без назви' }}
           </div>
-          <div class="time-entry__meta">
-            <span v-if="entry.project">{{ entry.project }}</span>
-            <span v-if="entry.type">{{ entry.type }}</span>
+          <div class="time-entry__meta" v-if="entry.project || entry.type">
+            <div class="meta-item" v-if="entry.project">
+              <span class="meta-label">Проєкт</span>
+              <span class="meta-value">{{ entry.project }}</span>
+            </div>
+            <div class="meta-item" v-if="entry.type">
+              <span class="meta-label">Тип проєкту</span>
+              <span class="meta-value">{{ entry.type }}</span>
+            </div>
           </div>
-          <div class="time-entry__actions">
+          <div class="time-entry__actions controls">
             <button
-              class="btn"
-              v-if="editingId === entry.logId"
-              @click="saveEntry(entry)"
+              v-for="item in menuItemsForEntry(entry)"
+              :key="item.label"
+              class="controls-menu__item"
+              :class="{ 'controls-menu__item--danger': item.danger }"
+              type="button"
+              @click="item.action"
             >
-              Зберегти
-            </button>
-            <button
-              class="btn"
-              v-else
-              @click="startEdit(entry)"
-            >
-              Редагувати
-            </button>
-            <button
-              class="btn ghost"
-              v-if="editingId === entry.logId"
-              @click="cancelEdit"
-            >
-              Скасувати
-            </button>
-            <button
-              class="btn red"
-              @click="removeEntry(entry)"
-            >
-              Видалити
+              <Icon :name="item.icon" size="18" />
+              <span>{{ item.label }}</span>
             </button>
           </div>
         </div>
@@ -130,6 +120,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { adjustedLogMs, earnedForMs, formatMs, formatUsd, shouldShowEarnings, toInputDate } from '../helpers';
 import TimeRangeSlider from './TimeRangeSlider.vue';
+import Icon from './Icon.vue';
 
 const props = defineProps({
   entries: { type: Array, default: () => [] },
@@ -146,6 +137,18 @@ const emit = defineEmits(['update-date', 'update-entry', 'remove-entry']);
 const editingId = ref(null);
 const draft = reactive({ start: 0, end: 0 });
 const entryEls = new Map();
+
+function menuItemsForEntry(entry) {
+  const items = [];
+  if (editingId.value === entry.logId) {
+    items.push({ icon: 'save', label: 'Зберегти', action: () => saveEntry(entry) });
+    items.push({ icon: 'cancel', label: 'Скасувати', action: () => cancelEdit() });
+  } else {
+    items.push({ icon: 'edit', label: 'Редагувати', action: () => startEdit(entry) });
+    items.push({ icon: 'trash', label: 'Видалити', danger: true, action: () => removeEntry(entry) });
+  }
+  return items;
+}
 
 function registerEntryEl(logId, el) {
   if (el) {
@@ -376,8 +379,47 @@ watch(
 }
 .time-entry__header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;}
 .time-entry__title{font-weight:600;}
-.time-entry__meta{display:flex;gap:8px;color:var(--sub);font-size:13px;}
-.time-entry__actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;}
+.time-entry__meta{
+  display:flex;
+  flex-wrap:wrap;
+  font-size:12px;
+  color:var(--sub);
+}
+.time-entry__meta .meta-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  opacity:0.4;
+}
+.time-entry__meta .meta-label{
+  padding:0 0 0 10px;
+  font-size:11px;
+}
+.time-entry__meta .meta-value{
+  padding:0;
+  color:var(--text);
+  font-weight:500;
+  opacity:0.85;
+}
+.time-entry__actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center;}
+
+.controls-menu__item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:none;
+  background:transparent;
+  color:inherit;
+  padding:8px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:14px;
+  text-align:left;
+}
+.controls-menu__item:hover{background:var(--input-bg-focus);}
+.controls-menu__item:active{transform:translateY(1px);}
+.controls-menu__item--danger{color:var(--danger);}
+.controls-menu__item--danger:hover{background:color-mix(in srgb, var(--danger) 14%, transparent);}
 
 .time-entry__body{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;align-items:center;}
 .time-entry__field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub);}
