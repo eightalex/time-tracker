@@ -1,6 +1,13 @@
 <template>
   <div class="trs" ref="rootRef">
     <div class="trs__track" @pointerdown="onTrackDown">
+      <div
+        v-for="(block, i) in occupiedBlocks"
+        :key="i"
+        class="trs__occupied"
+        :style="block.style"
+        :title="block.title"
+      ></div>
       <div class="trs__range" :style="rangeStyle"></div>
     </div>
     <div class="trs__hours" aria-hidden="true">
@@ -55,6 +62,11 @@ const props = defineProps({
   min: { type: Number, required: true },
   max: { type: Number, required: true },
   step: { type: Number, default: 60000 },
+  occupied: {
+    type: Array,
+    default: () => [],
+    // [{ start: number, end: number, title?: string }]
+  },
 });
 
 const emit = defineEmits(['update:from', 'update:to']);
@@ -75,6 +87,22 @@ const rangeStyle = computed(() => ({
   left: fromPct.value + '%',
   right: 100 - toPct.value + '%',
 }));
+
+const occupiedBlocks = computed(() =>
+  (props.occupied || [])
+    .filter((r) => r && Number.isFinite(r.start) && Number.isFinite(r.end) && r.end > props.min && r.start < props.max)
+    .map((r) => {
+      const start = Math.max(r.start, props.min);
+      const end = Math.min(r.end, props.max);
+      return {
+        title: r.title || '',
+        style: {
+          left: pctOf(start) + '%',
+          right: 100 - pctOf(end) + '%',
+        },
+      };
+    }),
+);
 
 const HOUR = 3600000;
 
@@ -100,15 +128,26 @@ const hourMarks = computed(() => {
 let dragging = null;
 
 function clampToFrom(value) {
-  const minAllowed = props.min;
-  const maxAllowed = props.to - props.step;
-  return Math.min(Math.max(value, minAllowed), maxAllowed);
+  // Lower bound: the closest occupied.end that lies at or below the current `to`
+  // (any such range, if newFrom crossed below it, would overlap with [newFrom, to]).
+  let lowerBound = props.min;
+  for (const r of props.occupied || []) {
+    if (!r || !Number.isFinite(r.end)) continue;
+    if (r.end <= props.to && r.end > lowerBound) lowerBound = r.end;
+  }
+  const upperBound = props.to - props.step;
+  return Math.min(Math.max(value, lowerBound), upperBound);
 }
 
 function clampToTo(value) {
-  const minAllowed = props.from + props.step;
-  const maxAllowed = props.max;
-  return Math.min(Math.max(value, minAllowed), maxAllowed);
+  // Upper bound: the closest occupied.start that lies at or above the current `from`.
+  let upperBound = props.max;
+  for (const r of props.occupied || []) {
+    if (!r || !Number.isFinite(r.start)) continue;
+    if (r.start >= props.from && r.start < upperBound) upperBound = r.start;
+  }
+  const lowerBound = props.from + props.step;
+  return Math.min(Math.max(value, lowerBound), upperBound);
 }
 
 function valueFromX(x, rect) {
@@ -220,6 +259,21 @@ function formatTime(ts) {
   bottom: 0;
   background: color-mix(in srgb, var(--accent, #6ee7b7) 65%, transparent);
   border-radius: 999px;
+  z-index: 1;
+}
+.trs__occupied {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sub) 35%, transparent) 0 4px,
+      color-mix(in srgb, var(--sub) 18%, transparent) 4px 8px
+    );
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 0;
 }
 .trs__hours {
   position: absolute;

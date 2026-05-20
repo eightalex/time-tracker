@@ -115,6 +115,7 @@
             :max="sliderMax"
             :from="draft.start"
             :to="draft.end"
+            :occupied="otherEntriesForSlider"
             @update:from="(v) => (draft.start = v)"
             @update:to="(v) => (draft.end = v)"
           />
@@ -243,6 +244,13 @@ const sliderMin = computed(() => {
   if (editingEntry.value) candidates.push(editingEntry.value.start);
   candidates.push(draft.start);
   return Math.min(...candidates);
+});
+
+const otherEntriesForSlider = computed(() => {
+  if (!editingId.value) return [];
+  return props.entries
+    .filter((e) => e.logId !== editingId.value)
+    .map((e) => ({ start: e.start, end: e.end, title: e.taskTitle || 'Без назви' }));
 });
 
 const sliderMax = computed(() => {
