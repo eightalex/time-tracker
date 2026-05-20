@@ -253,7 +253,7 @@ function formatTime(ts) {
 }
 .trs__thumb {
   position: absolute;
-  top: 22px;
+  top: 27px;
   transform: translate(-50%, -50%);
   width: 18px;
   height: 18px;
