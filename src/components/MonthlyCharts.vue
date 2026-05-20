@@ -13,12 +13,32 @@
           <span class="monthly-chart__total-value monthly-chart__total-value--money mono">{{ formatUsd(earnedForMs(monthlyTotalMs, hourlyRate)) }}</span>
         </p>
       </div>
-      <input
-        class="monthly-chart__month"
-        type="month"
-        v-model="selectedMonth"
-        aria-label="Оберіть місяць"
-      />
+      <div class="monthly-chart__month-picker">
+        <button
+          type="button"
+          class="date-stepper__arrow"
+          @click="shiftMonth(-1)"
+          aria-label="Попередній місяць"
+          title="Попередній місяць"
+        >
+          <Icon name="chevron-left" size="16" weight="bold" />
+        </button>
+        <input
+          class="monthly-chart__month"
+          type="month"
+          v-model="selectedMonth"
+          aria-label="Оберіть місяць"
+        />
+        <button
+          type="button"
+          class="date-stepper__arrow"
+          @click="shiftMonth(1)"
+          aria-label="Наступний місяць"
+          title="Наступний місяць"
+        >
+          <Icon name="chevron-right" size="16" weight="bold" />
+        </button>
+      </div>
     </div>
 
     <div class="monthly-chart__body">
@@ -443,6 +463,12 @@ function barAria(day) {
 function formatHours(ms) {
   const hours = ms / 3600000;
   return `${hours.toFixed(1)} год`;
+}
+
+function shiftMonth(delta) {
+  const base = parseMonth(selectedMonth.value) || firstDayOfMonth(new Date());
+  base.setMonth(base.getMonth() + delta);
+  selectedMonth.value = toInputMonth(base);
 }
 
 function parseMonth(value) {
@@ -907,6 +933,41 @@ function legendClasses(taskId) {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.monthly-chart__month-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-stepper__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 12px;
+  border: none;
+  background: var(--btn-bg1);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.1s ease;
+}
+
+.date-stepper__arrow:hover {
+  background: var(--btn-bg2);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.date-stepper__arrow:active {
+  transform: translateY(1px);
+}
+
+.date-stepper__arrow:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 2px;
 }
 
 .monthly-chart__title {

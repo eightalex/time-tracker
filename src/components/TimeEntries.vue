@@ -7,9 +7,27 @@
           {{ formatUsd(earnedForMs(totalMs, hourlyRate)) }}
         </span>
       </div>
-      <label class="time-entries__date">
-        <input type="date" v-model="modelDate" />
-      </label>
+      <div class="time-entries__date">
+        <button
+          type="button"
+          class="date-stepper__arrow"
+          @click="shiftDate(-1)"
+          aria-label="Попередній день"
+          title="Попередній день"
+        >
+          <Icon name="chevron-left" size="16" weight="bold" />
+        </button>
+        <input type="date" v-model="modelDate" aria-label="Оберіть дату" />
+        <button
+          type="button"
+          class="date-stepper__arrow"
+          @click="shiftDate(1)"
+          aria-label="Наступний день"
+          title="Наступний день"
+        >
+          <Icon name="chevron-right" size="16" weight="bold" />
+        </button>
+      </div>
     </div>
 
     <div v-if="entries.length" class="time-entries__list">
@@ -139,6 +157,13 @@ const emit = defineEmits(['update-date', 'update-entry', 'remove-entry']);
 const editingId = ref(null);
 const draft = reactive({ start: 0, end: 0 });
 const entryEls = new Map();
+
+function shiftDate(delta) {
+  const base = props.dateStr ? new Date(`${props.dateStr}T00:00:00`) : new Date();
+  if (Number.isNaN(base.getTime())) return;
+  base.setDate(base.getDate() + delta);
+  emit('update-date', toInputDate(base));
+}
 
 function menuItemsForEntry(entry) {
   const items = [];
@@ -357,8 +382,25 @@ watch(
 <style scoped>
 .time-entries{padding:18px;display:flex;flex-direction:column;gap:18px;}
 .time-entries__toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;}
-.time-entries__date{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub);}
+.time-entries__date{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);}
 .time-entries__date input{min-width:200px;}
+.date-stepper__arrow{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  padding:0;
+  border-radius:12px;
+  border: none;
+  background:var(--btn-bg1);
+  color:var(--text);
+  cursor:pointer;
+  transition:background-color 0.18s ease, border-color 0.18s ease, transform 0.1s ease;
+}
+.date-stepper__arrow:hover{background:var(--btn-bg2);border-color:color-mix(in srgb, var(--accent) 40%, var(--line));}
+.date-stepper__arrow:active{transform:translateY(1px);}
+.date-stepper__arrow:focus-visible{outline:2px solid color-mix(in srgb, var(--accent) 60%, transparent);outline-offset:2px;}
 .time-entries__total{display:flex;gap:8px;flex-wrap:wrap;font-weight:600;color:var(--text);}
 .time-entries__money{color:var(--accent);}
 

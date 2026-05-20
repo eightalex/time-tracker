@@ -15,6 +15,8 @@ import { computed } from 'vue';
 import {
     PhArchiveBox,
     PhBoxArrowUp,
+    PhCaretLeft,
+    PhCaretRight,
     PhClock,
     PhDotsThreeVertical,
     PhFloppyDisk,
@@ -54,6 +56,8 @@ const ICONS = {
     upload: PhUploadSimple,
     download: PhDownloadSimple,
     gear: PhGear,
+    'chevron-left': PhCaretLeft,
+    'chevron-right': PhCaretRight,
 };
 
 const props = defineProps({
