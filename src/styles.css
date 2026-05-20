@@ -169,6 +169,21 @@ input[type="month"] {
   padding-bottom: 9px;
 }
 
+input[type="time"],
+input[type="date"],
+input[type="month"],
+input[type="datetime-local"] {
+  cursor: pointer;
+  transition: background .2s ease, box-shadow .2s ease, border .2s ease;
+}
+
+input[type="time"]:hover,
+input[type="date"]:hover,
+input[type="month"]:hover,
+input[type="datetime-local"]:hover {
+  background: var(--btn-bg2);
+}
+
 input:focus,
 select:focus,
 textarea:focus {

@@ -388,8 +388,9 @@ watch(
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:32px;
-  height:32px;
+  flex:0 0 auto;
+  width:36.5px;
+  height:36.5px;
   padding:0;
   border-radius:12px;
   border: none;
