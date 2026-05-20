@@ -26,17 +26,19 @@
         ]"
       >
         <div class="time-entry__header">
-          <div class="time-entry__title">
-            {{ entry.taskTitle || 'Без назви' }}
-          </div>
-          <div class="time-entry__meta" v-if="entry.project || entry.type">
-            <div class="meta-item" v-if="entry.project">
-              <span class="meta-label">Проєкт</span>
-              <span class="meta-value">{{ entry.project }}</span>
+          <div class="time-entry__info">
+            <div class="time-entry__title">
+              {{ entry.taskTitle || 'Без назви' }}
             </div>
-            <div class="meta-item" v-if="entry.type">
-              <span class="meta-label">Тип проєкту</span>
-              <span class="meta-value">{{ entry.type }}</span>
+            <div class="time-entry__meta" v-if="entry.project || entry.type">
+              <div class="meta-item" v-if="entry.project">
+                <span class="meta-label">Проєкт</span>
+                <span class="meta-value">{{ entry.project }}</span>
+              </div>
+              <div class="meta-item" v-if="entry.type">
+                <span class="meta-label">Тип проєкту</span>
+                <span class="meta-value">{{ entry.type }}</span>
+              </div>
             </div>
           </div>
           <div class="time-entry__actions controls">
@@ -377,7 +379,8 @@ watch(
 .time-entry.is-editing {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #6ee7b7) 55%, transparent);
 }
-.time-entry__header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;}
+.time-entry__header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;}
+.time-entry__info{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1;}
 .time-entry__title{font-weight:600;}
 .time-entry__meta{
   display:flex;
@@ -392,7 +395,6 @@ watch(
   opacity:0.4;
 }
 .time-entry__meta .meta-label{
-  padding:0 0 0 10px;
   font-size:11px;
 }
 .time-entry__meta .meta-value{
